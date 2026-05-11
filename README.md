@@ -3,7 +3,7 @@
 > AI 기반 평생교육 커리큘럼 추천 웹 서비스
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)](https://vitejs.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite)](https://vitejs.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <br/>
@@ -24,10 +24,12 @@
 | 분류 | 기술 |
 |------|------|
 | Framework | React 18 |
-| Build Tool | Vite 5 |
-| Styling | Tailwind CSS |
-| State Management | Zustand |
-| HTTP Client | Axios |
+| Build Tool | Vite 6 |
+| Styling | Tailwind CSS 4 |
+| UI Components | Radix UI / shadcn/ui |
+| Routing | React Router 7 |
+| Form | React Hook Form |
+| Icons | Lucide React, MUI Icons |
 | Package Manager | npm |
 
 <br/>
@@ -64,16 +66,23 @@ VITE_KAKAO_MAP_KEY=your_kakao_map_key
 src/
 ├── assets/          # 이미지, 폰트 등 정적 파일
 ├── components/      # 공통 컴포넌트
-│   ├── common/      # Button, Input, Card 등
-│   └── layout/      # Header, Footer 등
+│   ├── common/      # Button, Input, Card 등 재사용 컴포넌트
+│   │   └── ui/      # shadcn/ui 기반 기본 컴포넌트
+│   └── layout/      # Navigation 등 레이아웃 컴포넌트
 ├── pages/           # 페이지 컴포넌트
-│   ├── Landing/
-│   ├── GoalInput/
+│   ├── Home/
+│   ├── Auth/
 │   ├── Roadmap/
-│   └── Dashboard/
+│   ├── Dashboard/
+│   ├── Search/
+│   ├── MyPage/
+│   ├── Quiz/
+│   ├── LearningSpaces/
+│   ├── AIReviewNote/
+│   └── NotificationSettings/
 ├── hooks/           # 커스텀 훅
 ├── services/        # API 호출 함수
-├── store/           # Zustand 상태 관리
+├── store/           # 전역 상태 관리
 ├── styles/          # 전역 스타일
 └── utils/           # 유틸리티 함수
 ```
@@ -143,7 +152,7 @@ hotfix/이슈내용       # hotfix/api-timeout
 ```bash
 feat: 로드맵 결과 페이지 강의 카드 컴포넌트 추가
 fix: 대시보드 진행률 계산 오류 수정
-chore: axios 버전 업데이트
+chore: 패키지 버전 업데이트
 design: 랜딩 페이지 히어로 섹션 레이아웃 수정
 ```
 
@@ -151,7 +160,7 @@ design: 랜딩 페이지 히어로 섹션 레이아웃 수정
 
 - 제목은 50자 이내로 작성
 - 제목 끝에 마침표 붙이지 않기
-- 제목은 명령문으로 작성 ("추가했다" X -> "추가" O)
+- 제목은 명령문으로 작성 ("추가했다" X → "추가" O)
 - 본문이 필요한 경우 제목과 한 줄 띄어서 작성
 
 <br/>
