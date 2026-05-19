@@ -1,67 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
-
-const mockCourses = [
-  {
-    courseName: "모두를 위한 파이썬",
-    institution: "한국외국어대학교",
-    platform: "K-MOOC",
-    level: "입문",
-    duration: "3시간",
-  },
-  {
-    courseName: "데이터 과학을 위한 파이썬 입문",
-    institution: "서울대학교",
-    platform: "K-MOOC",
-    level: "초급",
-    duration: "4주",
-  },
-  {
-    courseName: "파이썬 프로그래밍 기초",
-    institution: "연세대학교",
-    platform: "KOCW",
-    level: "입문",
-    duration: "8주",
-  },
-  {
-    courseName: "데이터 분석을 위한 Python 활용",
-    institution: "고려대학교",
-    platform: "K-MOOC",
-    level: "중급",
-    duration: "6주",
-  },
-];
+import { searchCourses, type CourseSearchResult } from "../api/client";
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [platform, setPlatform] = useState("");
   const [category, setCategory] = useState("");
   const [level, setLevel] = useState("");
-  const [duration, setDuration] = useState("");
-  const [hasCertificate, setHasCertificate] = useState(false);
-  const [sortBy, setSortBy] = useState("추천순");
+  const [sortBy, setSortBy] = useState("최신순");
+  
+  const [results, setResults] = useState<CourseSearchResult["content"]>([]);
+  const [loading, setLoading] = useState(false);
+  const [totalElements, setTotalElements] = useState(0);
+  const [page, setPage] = useState(0);
+  const size = 10;
+
+  const fetchCourses = async (pageNum = 0) => {
+    setLoading(true);
+    try {
+      const res = await searchCourses({
+        keyword: searchQuery || undefined,
+        platform: platform || undefined,
+        category: category || undefined,
+        difficulty: level || undefined,
+        page: pageNum,
+        size,
+      });
+      setResults(res.content);
+      setTotalElements(res.totalElements);
+      setPage(res.currentPage);
+    } catch (err) {
+      console.error("강좌 검색 실패:", err);
+      setResults([]);
+      setTotalElements(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = () => {
-    console.log("검색:", searchQuery);
+    setPage(0);
+    fetchCourses(0);
   };
 
   const handleResetFilters = () => {
     setPlatform("");
     setCategory("");
     setLevel("");
-    setDuration("");
-    setHasCertificate(false);
+    setSortBy("최신순");
   };
 
-  const activeFilters: Array<{ label: string; onRemove: () => void }> = [
+  useEffect(() => {
+    // 초기 로딩 시 빈 결과 또는 기본 검색
+  }, []);
+
+  const activeFilters = [
     platform ? { label: platform, onRemove: () => setPlatform("") } : null,
     category ? { label: category, onRemove: () => setCategory("") } : null,
     level ? { label: level, onRemove: () => setLevel("") } : null,
-    duration ? { label: duration, onRemove: () => setDuration("") } : null,
-    hasCertificate
-      ? { label: "수료증", onRemove: () => setHasCertificate(false) }
-      : null,
   ].filter(Boolean) as Array<{ label: string; onRemove: () => void }>;
 
   return (
@@ -87,7 +84,7 @@ export default function SearchPage() {
             />
             <FilterDropdownButton
               label="카테고리"
-              options={["인문", "사회", "공학", "IT/SW", "자연과학", "교육", "예술", "의약학"]}
+              options={["인문", "사회", "공학", "IT/SW", "자연과학", "교육", "예술", "의약학", "프로그래밍", "데이터 분석"]}
               value={category}
               onChange={setCategory}
             />
@@ -97,24 +94,6 @@ export default function SearchPage() {
               value={level}
               onChange={setLevel}
             />
-            <FilterDropdownButton
-              label="수강 기간"
-              options={["4주 이하", "4~8주", "8~12주", "12주 이상"]}
-              value={duration}
-              onChange={setDuration}
-            />
-
-            <button
-              type="button"
-              onClick={() => setHasCertificate(!hasCertificate)}
-              className={`px-4 py-2 border rounded-full text-[13px] font-[600] transition-colors ${
-                hasCertificate
-                  ? "border-[#3B6B4A] bg-[#E8F0EA] text-[#3B6B4A]"
-                  : "border-[#E5E0D8] bg-white text-[#2C2C2C] hover:border-[#C0C0C0]"
-              }`}
-            >
-              수료증
-            </button>
 
             <div className="flex-1" />
 
@@ -143,16 +122,60 @@ export default function SearchPage() {
 
           <div className="flex items-center justify-between mb-5 pt-4">
             <h2 className="text-[16px] text-[#2C2C2C] font-[600]">
-              총 247개의 강좌를 찾았어요
+              {loading ? "검색 중..." : `총 ${totalElements}개의 강좌를 찾았어요`}
             </h2>
             <SortMenu value={sortBy} onChange={setSortBy} />
           </div>
 
-          <div className="space-y-4">
-            {mockCourses.map((course) => (
-              <SearchResultCard key={`${course.courseName}-${course.platform}`} {...course} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white border border-[#E5E0D8] rounded-2xl p-5 animate-pulse">
+                  <div className="h-5 bg-[#E5E0D8] rounded w-1/3 mb-2" />
+                  <div className="h-4 bg-[#E5E0D8] rounded w-1/4 mb-3" />
+                  <div className="flex gap-2">
+                    <div className="h-5 bg-[#E5E0D8] rounded-full w-16" />
+                    <div className="h-5 bg-[#E5E0D8] rounded-full w-12" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : results.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-[16px] text-[#777777] mb-2">검색 결과가 없습니다</p>
+              <p className="text-[14px] text-[#AAAAAA]">다른 키워드로 검색해보세요</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {results.map((course) => (
+                <SearchResultCard key={course.id} {...course} />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalElements > size && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <button
+                disabled={page === 0}
+                onClick={() => fetchCourses(page - 1)}
+                className="px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-40"
+                style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
+              >
+                이전
+              </button>
+              <span className="px-3 py-1.5 text-sm font-medium" style={{ color: '#3B6B4A' }}>
+                {page + 1}
+              </span>
+              <button
+                onClick={() => fetchCourses(page + 1)}
+                className="px-3 py-1.5 rounded-lg text-sm border transition-colors"
+                style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
+              >
+                다음
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>
@@ -281,7 +304,7 @@ function SortMenu({
   onChange: (value: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const sortOptions = ["추천순", "인기순", "최신순", "강좌명순"];
+  const sortOptions = ["최신순", "인기순", "강좌명순"];
 
   return (
     <div className="relative">
@@ -321,17 +344,23 @@ function SortMenu({
 }
 
 function SearchResultCard({
-  courseName,
+  id,
+  title,
   institution,
   platform,
-  level,
-  duration,
+  difficulty,
+  estimatedHours,
+  durationWeeks,
+  url,
 }: {
-  courseName: string;
+  id: string;
+  title: string;
   institution: string;
   platform: string;
-  level: string;
-  duration: string;
+  difficulty: string;
+  estimatedHours: number;
+  durationWeeks: number;
+  url: string;
 }) {
   const platformColors: Record<string, string> = {
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
@@ -351,7 +380,7 @@ function SearchResultCard({
     <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="text-[16px] font-[800] text-[#2C2C2C] mb-1">{courseName}</h3>
+          <h3 className="text-[16px] font-[800] text-[#2C2C2C] mb-1">{title}</h3>
           <p className="text-[13px] text-[#777777] mb-3">{institution}</p>
           <div className="flex flex-wrap gap-2">
             <span
@@ -363,19 +392,24 @@ function SearchResultCard({
             </span>
             <span
               className={`px-3 py-1 rounded-full text-[11px] font-[600] ${
-                levelColors[level] || levelColors.입문
+                levelColors[difficulty] || levelColors.입문
               }`}
             >
-              {level}
+              {difficulty}
             </span>
             <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#EBF5FB] text-[#3498DB]">
-              {duration}
+              {durationWeeks}주 · {estimatedHours}시간
             </span>
           </div>
         </div>
-        <button className="ml-4 px-5 py-2.5 border border-[#3B6B4A] text-[#3B6B4A] rounded-full text-[13px] font-[600] hover:bg-[#E8F0EA] transition-colors whitespace-nowrap">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-4 px-5 py-2.5 border border-[#3B6B4A] text-[#3B6B4A] rounded-full text-[13px] font-[600] hover:bg-[#E8F0EA] transition-colors whitespace-nowrap"
+        >
           수강 신청 →
-        </button>
+        </a>
       </div>
     </div>
   );
