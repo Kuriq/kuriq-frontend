@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { login as apiLogin, signup as apiSignup, logout as apiLogout } from "../api/client";
+import { login as apiLogin, signup as apiSignup, logout as apiLogout, getProfile, type UserProfile } from "../api/client";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   accessToken: string | null;
+  user: UserProfile | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, ageGroup?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,6 +22,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(() =>
     localStorage.getItem("accessToken")
   );
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  // Fetch profile on mount if token exists
+  useEffect(() => {
+    if (accessToken) {
+      getProfile()
+        .then(setUser)
+        .catch(() => setUser(null));
+    }
+  }, [accessToken]);
 
   useEffect(() => {
     const handler = (e: StorageEvent) => {
@@ -34,11 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await apiLogin(email, password);
     localStorage.setItem("accessToken", res.accessToken);
     setAccessToken(res.accessToken);
+    const profile = await getProfile();
+    setUser(profile);
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string, ageGroup?: string) => {
     await apiSignup(email, password, name, ageGroup);
-    // 회원가입 후 자동 로그인
     await login(email, password);
   }, [login]);
 
@@ -50,10 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     localStorage.removeItem("accessToken");
     setAccessToken(null);
+    setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!accessToken, accessToken, login, signup, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!accessToken, accessToken, user, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

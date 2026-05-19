@@ -1,8 +1,38 @@
+import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
+import { useAuth } from "../context/AuthContext";
+import { getUserStats, getCategoryStats, getLearningHistory, type UserStats, type CategoryStat, type LearningHistoryItem } from "../api/client";
 
 export default function MyPage() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [categories, setCategories] = useState<CategoryStat[]>([]);
+  const [history, setHistory] = useState<LearningHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getUserStats(), getCategoryStats(), getLearningHistory(0, 5)])
+      .then(([s, c, h]) => {
+        setStats(s);
+        setCategories(c);
+        setHistory(h);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const formatHours = (hours: number) => {
+    if (hours < 1) return `${Math.round(hours * 60)}분`;
+    return `${hours}시간`;
+  };
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="마이페이지" />
@@ -14,38 +44,86 @@ export default function MyPage() {
               <User className="w-7 h-7 text-[#3B6B4A]" />
             </div>
             <div>
-              <h1 className="text-[22px] font-[800] text-[#2C2C2C] mb-1">이정호님의 학습 기록</h1>
+              <h1 className="text-[22px] font-[800] text-[#2C2C2C] mb-1">
+                {loading ? "로딩 중..." : `${user?.name}님의 학습 기록`}
+              </h1>
               <p className="text-[13px] text-[#777777]">가입일: 2026.03.15</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 mb-12">
-            <StatSummaryCard icon="📚" value="12개" label="이수 강좌" />
-            <StatSummaryCard icon="⏱" value="47시간" label="총 학습 시간" />
-            <StatSummaryCard icon="🔥" value="18일" label="연속 학습" />
-            <StatSummaryCard icon="✅" value="1개" label="완료 로드맵" />
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-4 gap-4 mb-12">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white border border-[#E5E0D8] rounded-2xl p-6 animate-pulse">
+                  <div className="h-8 bg-[#E5E0D8] rounded mb-2" />
+                  <div className="h-7 bg-[#E5E0D8] rounded mb-1" />
+                  <div className="h-4 bg-[#E5E0D8] rounded" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-4 mb-12">
+              <StatSummaryCard icon="📚" value={`${stats?.totalCompletedCourses ?? 0}개`} label="이수 강좌" />
+              <StatSummaryCard icon="⏱" value={formatHours(stats?.totalLearningHours ?? 0)} label="총 학습 시간" />
+              <StatSummaryCard icon="🔥" value={`${stats?.streakDays ?? 0}일`} label="연속 학습" />
+              <StatSummaryCard icon="✅" value={`${stats?.completedRoadmapCount ?? 0}개`} label="완료 로드맵" />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-8 mb-8">
             <div>
               <h2 className="text-[18px] font-[800] text-[#2C2C2C] mb-5">🗺️ 분야별 학습 현황</h2>
               <div className="bg-white border border-[#E5E0D8] rounded-2xl p-6">
-                <SubjectProgressItem subject="프로그래밍 (파이썬)" progress={75} completedCount={6} />
-                <SubjectProgressItem subject="데이터 분석" progress={45} completedCount={4} />
-                <SubjectProgressItem subject="통계학 기초" progress={25} completedCount={2} />
+                {loading ? (
+                  [1, 2, 3].map(i => (
+                    <div key={i} className="mb-5 last:mb-0 animate-pulse">
+                      <div className="flex justify-between mb-2">
+                        <div className="h-4 bg-[#E5E0D8] rounded w-24" />
+                        <div className="h-4 bg-[#E5E0D8] rounded w-16" />
+                      </div>
+                      <div className="h-2.5 bg-[#E5E0D8] rounded-full" />
+                    </div>
+                  ))
+                ) : categories.length === 0 ? (
+                  <p className="text-[14px] text-[#777777] text-center py-4">아직 학습 기록이 없습니다.</p>
+                ) : (
+                  categories.map(cat => (
+                    <SubjectProgressItem
+                      key={cat.category}
+                      subject={cat.category}
+                      progress={cat.progressPercent}
+                      completedCount={cat.completedCount}
+                    />
+                  ))
+                )}
               </div>
             </div>
 
             <div>
               <h2 className="text-[18px] font-[800] text-[#2C2C2C] mb-5">📜 최근 이수 내역</h2>
               <div className="bg-white border border-[#E5E0D8] rounded-2xl p-6">
-                <RecentCompletionItem courseName="모두를 위한 파이썬" platform="K-MOOC" date="2026.03.28" />
-                <RecentCompletionItem courseName="데이터 과학을 위한 통계학" platform="KOCW" date="2026.03.25" />
-                <RecentCompletionItem
-                  courseName="엑셀 데이터 분석 실전"
-                  platform="온국민평생배움터"
-                  date="2026.03.20"
-                />
+                {loading ? (
+                  [1, 2, 3].map(i => (
+                    <div key={i} className="flex items-start gap-3 mb-4 last:mb-0 animate-pulse">
+                      <div className="w-5 h-5 bg-[#E5E0D8] rounded-md flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="h-4 bg-[#E5E0D8] rounded w-3/4 mb-1.5" />
+                        <div className="h-4 bg-[#E5E0D8] rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))
+                ) : history.length === 0 ? (
+                  <p className="text-[14px] text-[#777777] text-center py-4">이수한 강좌가 없습니다.</p>
+                ) : (
+                  history.map(item => (
+                    <RecentCompletionItem
+                      key={item.id}
+                      courseName={item.courseTitle}
+                      platform={item.platform}
+                      date={formatDate(item.completedAt)}
+                    />
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -58,7 +136,9 @@ export default function MyPage() {
               <div className="flex-1">
                 <h3 className="text-[16px] font-[800] text-[#E8985E] mb-2">큐리의 다음 추천</h3>
                 <p className="text-[14px] text-[#2C2C2C] leading-relaxed">
-                  파이썬 기초를 잘 마무리했어요! 다음으로 머신러닝 입문 과정은 어떨까요?
+                  {categories.length > 0
+                    ? `${categories[0].category}을(를) 잘 마무리했어요! 다음 단계로 도전해볼까요?`
+                    : "아직 학습 기록이 없어요. 첫 강좌를 시작해보세요!"}
                 </p>
               </div>
             </div>
