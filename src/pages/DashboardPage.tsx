@@ -1,13 +1,82 @@
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getRoadmap, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
 
 export default function DashboardPage() {
+  const location = useLocation();
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const roadmapId = location.state?.roadmapId;
+    if (roadmapId) {
+      getRoadmap(roadmapId)
+        .then((data) => {
+          setRoadmap(data);
+          // 현재 진행 주차로 초기화
+          const idx = data.weeks.findIndex((w) => w.weekNumber === data.currentWeek);
+          setCurrentWeekIndex(idx >= 0 ? idx : 0);
+        })
+        .catch(() => setError("로드맵을 불러오지 못했습니다."))
+        .finally(() => setLoading(false));
+    } else {
+      setError("활성화된 로드맵이 없습니다.");
+      setLoading(false);
+    }
+  }, [location.state]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
+        <Navigation activeMenu="대시보드" />
+        <main className="flex-1 px-8 py-12 flex items-center justify-center">
+          <p className="text-[16px] text-[#777777]">대시보드를 불러오는 중...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !roadmap) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
+        <Navigation activeMenu="대시보드" />
+        <main className="flex-1 px-8 py-12 flex flex-col items-center justify-center">
+          <p className="text-[16px] text-red-600 mb-4">{error || "활성화된 로드맵이 없습니다."}</p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-6 py-2.5 bg-[#3B6B4A] text-white rounded-full font-[600] text-[14px]"
+          >
+            돌아가기
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  const currentWeek = roadmap.weeks[currentWeekIndex];
+  const prevWeek = currentWeekIndex > 0 ? roadmap.weeks[currentWeekIndex - 1] : null;
+  const nextWeek = currentWeekIndex < roadmap.weeks.length - 1 ? roadmap.weeks[currentWeekIndex + 1] : null;
+
+  const weekStartDay = new Date();
+  const weekEndDay = new Date();
+  weekEndDay.setDate(weekEndDay.getDate() + 6);
+  const formatDateShort = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
+
+  // 주차별 완료된 강좌 수 계산
+  const totalCompletedItems = roadmap.weeks.reduce(
+    (sum, w) => sum + w.items.filter((i) => i.isCompleted).length,
+    0
+  );
+  const totalItems = roadmap.weeks.reduce((sum, w) => sum + w.items.length, 0);
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-      {/* Navigation */}
       <Navigation activeMenu="대시보드" />
 
-      {/* Main content */}
       <main className="flex-1 px-8 py-12">
         <div className="max-w-[1100px] mx-auto">
           {/* Header row */}
@@ -17,8 +86,10 @@ export default function DashboardPage() {
                 이번 주 학습
               </h1>
               <div className="flex items-center gap-2">
-                <button 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                <button
+                  disabled={!prevWeek}
+                  onClick={() => setCurrentWeekIndex((i) => i - 1)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40"
                   style={{ backgroundColor: 'white', border: '1px solid #E5E0D8' }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8F6F1'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
@@ -26,10 +97,12 @@ export default function DashboardPage() {
                   <ChevronLeft size={16} color="#777777" />
                 </button>
                 <span className="text-sm" style={{ color: '#777777' }}>
-                  Week 3 · 4월 14일 ~ 4월 20일
+                  Week {currentWeek.weekNumber} · {currentWeek.title}
                 </span>
-                <button 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                <button
+                  disabled={!nextWeek}
+                  onClick={() => setCurrentWeekIndex((i) => i + 1)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40"
                   style={{ backgroundColor: 'white', border: '1px solid #E5E0D8' }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8F6F1'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
@@ -41,21 +114,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Quri Greeting Card */}
-          <div 
-            className="rounded-[14px] p-4 mb-6 flex items-center gap-3"
-            style={{ backgroundColor: '#E8F0EA' }}
-          >
-            {/* Quri Winking */}
+          <div className="rounded-[14px] p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: '#E8F0EA' }}>
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
               <ellipse cx="18" cy="20.25" rx="10.5" ry="12" fill="#E8985E" />
               <ellipse cx="18" cy="22.5" rx="6.75" ry="8.25" fill="#FFF3EB" />
               <path d="M 10.5 11.25 Q 8.25 6.75 9 5.25 Q 10.5 4.5 12 7.5 L 11.25 12 Z" fill="#D67A45" />
               <path d="M 25.5 11.25 Q 27.75 6.75 27 5.25 Q 25.5 4.5 24 7.5 L 24.75 12 Z" fill="#D67A45" />
-              {/* Left eye - open */}
               <circle cx="14.25" cy="15.75" r="4.2" fill="white" />
               <circle cx="14.7" cy="15.75" r="2.55" fill="#2C2C2C" />
               <circle cx="15" cy="15" r="1.2" fill="white" />
-              {/* Right eye - winking */}
               <path d="M 19.5 15.75 Q 21.75 14.5 24 15.75" stroke="#2C2C2C" strokeWidth="2" strokeLinecap="round" fill="none" />
               <path d="M 18 18 L 16.5 20.25 L 19.5 20.25 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="0.5" />
               <ellipse cx="18" cy="8.25" rx="9" ry="2.25" fill="#2C2C2C" />
@@ -63,7 +130,11 @@ export default function DashboardPage() {
               <rect x="10.5" y="6" width="15" height="0.75" fill="#2C2C2C" />
             </svg>
             <p className="text-sm font-medium" style={{ color: '#2C2C2C' }}>
-              절반 넘었어요! 잘 하고 있어요 🎉
+              {roadmap.progressPercent >= 50
+                ? "절반 넘었어요! 잘 하고 있어요 🎉"
+                : roadmap.progressPercent > 0
+                ? "좋은 시작이에요! 계속 가볼까요? 💪"
+                : "새로운 시작을 응원해요! 🌟"}
             </p>
           </div>
 
@@ -75,21 +146,24 @@ export default function DashboardPage() {
               <div className="bg-white rounded-2xl p-5 mb-6" style={{ border: '1px solid #E5E0D8' }}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm" style={{ color: '#2C2C2C' }}>이번 주 진행률</span>
-                  <span className="font-bold" style={{ color: '#3B6B4A', fontSize: '22px' }}>50%</span>
+                  <span className="font-bold" style={{ color: '#3B6B4A', fontSize: '22px' }}>
+                    {currentWeek.totalCount > 0
+                      ? Math.round((currentWeek.completedCount / currentWeek.totalCount) * 100)
+                      : 0}%
+                  </span>
                 </div>
-                {/* Progress bar */}
-                <div 
-                  className="w-full h-2.5 rounded-full mb-3 overflow-hidden"
-                  style={{ backgroundColor: '#E5E0D8' }}
-                >
-                  <div 
+                <div className="w-full h-2.5 rounded-full mb-3 overflow-hidden" style={{ backgroundColor: '#E5E0D8' }}>
+                  <div
                     className="h-full rounded-full"
-                    style={{ backgroundColor: '#3B6B4A', width: '50%' }}
+                    style={{
+                      backgroundColor: '#3B6B4A',
+                      width: `${currentWeek.totalCount > 0 ? (currentWeek.completedCount / currentWeek.totalCount) * 100 : 0}%`
+                    }}
                   />
                 </div>
                 <div className="flex items-center justify-between text-[13px]" style={{ color: '#777777' }}>
-                  <span>2/4 강좌 완료</span>
-                  <span>남은 시간: 약 3시간</span>
+                  <span>{currentWeek.completedCount}/{currentWeek.totalCount} 강좌 완료</span>
+                  <span>남은 시간: 약 {currentWeek.totalHours}시간</span>
                 </div>
               </div>
 
@@ -100,175 +174,14 @@ export default function DashboardPage() {
 
               {/* Course cards */}
               <div className="space-y-3">
-                {/* Course 1 - Completed */}
-                <div 
-                  className="rounded-xl p-4 flex items-center gap-4"
-                  style={{ 
-                    backgroundColor: '#F0F7ED',
-                    border: '1px solid #C8E0D0'
-                  }}
-                >
-                  {/* Checkbox */}
-                  <div 
-                    className="flex-shrink-0 w-[22px] h-[22px] rounded flex items-center justify-center"
-                    style={{ backgroundColor: '#3B6B4A' }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M2 7L5.5 10.5L12 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-
-                  {/* Course info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm" style={{ color: '#777777', textDecoration: 'line-through' }}>
-                        모두를 위한 파이썬 (3/10강)
-                      </p>
-                      <span 
-                        className="px-2 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: '#E8F0EA', color: '#3B6B4A' }}
-                      >
-                        K-MOOC
-                      </span>
-                      <span 
-                        className="px-2 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: '#E8F0EA', color: '#3B6B4A' }}
-                      >
-                        입문
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-2">
-                    <button 
-                      className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
-                      style={{ borderColor: '#3B6B4A', color: '#3B6B4A', backgroundColor: 'transparent' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E8F0EA'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      📝 노트 보기
-                    </button>
-                    <button 
-                      className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
-                      style={{ borderColor: '#3B6B4A', color: '#3B6B4A', backgroundColor: 'transparent' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E8F0EA'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      🔁 복습하기
-                    </button>
-                  </div>
-                </div>
-
-                {/* Course 2 - In Progress */}
-                <div 
-                  className="bg-white rounded-xl p-4 flex items-center gap-4"
-                  style={{ border: '1px solid #E5E0D8' }}
-                >
-                  {/* Empty checkbox */}
-                  <div 
-                    className="flex-shrink-0 w-[22px] h-[22px] rounded"
-                    style={{ border: '2px solid #E5E0D8' }}
-                  />
-
-                  {/* Course info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-bold" style={{ color: '#2C2C2C' }}>
-                        파이썬 프로그래밍 기초 (1/8강)
-                      </p>
-                      <span 
-                        className="px-2 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: '#E3F2FD', color: '#1976D2' }}
-                      >
-                        KOCW
-                      </span>
-                      <span 
-                        className="px-2 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: '#FFF9C4', color: '#827717' }}
-                      >
-                        초급
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-2">
-                    <button 
-                      className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
-                      style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'transparent' }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#3B6B4A';
-                        e.currentTarget.style.color = '#3B6B4A';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#E5E0D8';
-                        e.currentTarget.style.color = '#777777';
-                      }}
-                    >
-                      📝 노트 작성
-                    </button>
-                    <button 
-                      className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity"
-                      style={{ backgroundColor: '#3B6B4A', color: 'white' }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                    >
-                      이어듣기 →
-                    </button>
-                  </div>
-                </div>
-
-                {/* Course 3 - Not Started */}
-                <div 
-                  className="bg-white rounded-xl p-4 flex items-center gap-4"
-                  style={{ border: '1px solid #E5E0D8' }}
-                >
-                  {/* Empty checkbox */}
-                  <div 
-                    className="flex-shrink-0 w-[22px] h-[22px] rounded"
-                    style={{ border: '2px solid #E5E0D8' }}
-                  />
-
-                  {/* Course info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm" style={{ color: '#777777' }}>
-                        데이터 분석 입문 (0/12강)
-                      </p>
-                      <span 
-                        className="px-2 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: '#FFE8D6', color: '#A05A2C' }}
-                      >
-                        온국민평생배움터
-                      </span>
-                      <span 
-                        className="px-2 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: '#FFF9C4', color: '#827717' }}
-                      >
-                        초급
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-2">
-                    <button 
-                      className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity"
-                      style={{ backgroundColor: '#3B6B4A', color: 'white' }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                    >
-                      시작하기 →
-                    </button>
-                  </div>
-                </div>
+                {currentWeek.items.map((item) => (
+                  <CourseCard key={item.id} item={item} />
+                ))}
               </div>
             </div>
 
             {/* RIGHT COLUMN (35%) */}
             <div style={{ flex: '0 0 35%' }}>
-              {/* Section title */}
               <h2 className="font-bold mb-4" style={{ color: '#2C2C2C', fontSize: '16px' }}>
                 📍 전체 로드맵
               </h2>
@@ -276,158 +189,78 @@ export default function DashboardPage() {
               {/* Vertical Timeline */}
               <div className="bg-white rounded-2xl p-5 mb-6" style={{ border: '1px solid #E5E0D8' }}>
                 <div className="relative space-y-5">
-                  {/* Vertical line */}
-                  <div 
+                  <div
                     className="absolute left-[15px] top-[15px] bottom-[15px] w-0.5"
                     style={{ backgroundColor: '#E5E0D8' }}
                   />
 
-                  {/* Week 1 - Completed */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10"
-                      style={{ backgroundColor: '#3B6B4A', color: 'white' }}
-                    >
-                      1
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
-                        파이썬 기초
-                      </p>
-                      <span className="text-xs font-medium" style={{ color: '#4CAF50' }}>
-                        완료
-                      </span>
-                    </div>
-                  </div>
+                  {roadmap.weeks.map((week) => {
+                    const isCompleted = week.weekProgressPercent >= 100;
+                    const isCurrent = week.weekNumber === roadmap.currentWeek;
+                    const isFuture = week.weekNumber > roadmap.currentWeek;
 
-                  {/* Week 2 - Completed */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10"
-                      style={{ backgroundColor: '#3B6B4A', color: 'white' }}
-                    >
-                      2
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
-                        데이터 타입
-                      </p>
-                      <span className="text-xs font-medium" style={{ color: '#4CAF50' }}>
-                        완료
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Week 3 - Current */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-base z-10"
-                      style={{ backgroundColor: '#3B6B4A', color: 'white' }}
-                    >
-                      3
-                    </div>
-                    <div className="flex-1 pt-2">
-                      <p className="text-sm font-bold mb-1" style={{ color: '#2C2C2C' }}>
-                        데이터 시각화
-                      </p>
-                      <span className="text-xs font-medium" style={{ color: '#3B6B4A' }}>
-                        📌 현재 진행 중
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Week 4 - Future */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10"
-                      style={{ backgroundColor: 'white', border: '2px solid #E5E0D8', color: '#AAAAAA' }}
-                    >
-                      4
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-sm" style={{ color: '#AAAAAA' }}>
-                        웹 크롤링
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Week 5 - Future */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10"
-                      style={{ backgroundColor: 'white', border: '2px solid #E5E0D8', color: '#AAAAAA' }}
-                    >
-                      5
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-sm" style={{ color: '#AAAAAA' }}>
-                        API 활용
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Week 6 - Future */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10"
-                      style={{ backgroundColor: 'white', border: '2px solid #E5E0D8', color: '#AAAAAA' }}
-                    >
-                      6
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-sm" style={{ color: '#AAAAAA' }}>
-                        데이터베이스
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Week 7 - Future */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10"
-                      style={{ backgroundColor: 'white', border: '2px solid #E5E0D8', color: '#AAAAAA' }}
-                    >
-                      7
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-sm" style={{ color: '#AAAAAA' }}>
-                        프로젝트 실습
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Week 8 - Future */}
-                  <div className="relative flex items-start gap-3">
-                    <div 
-                      className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10"
-                      style={{ backgroundColor: 'white', border: '2px solid #E5E0D8', color: '#AAAAAA' }}
-                    >
-                      8
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <p className="text-sm" style={{ color: '#AAAAAA' }}>
-                        최종 평가
-                      </p>
-                    </div>
-                  </div>
+                    return (
+                      <div
+                        key={week.weekNumber}
+                        className="relative flex items-start gap-3 cursor-pointer"
+                        onClick={() => {
+                          const idx = roadmap.weeks.findIndex((w) => w.weekNumber === week.weekNumber);
+                          setCurrentWeekIndex(idx);
+                        }}
+                      >
+                        <div
+                          className="flex-shrink-0 z-10 flex items-center justify-center font-bold"
+                          style={{
+                            width: isCurrent ? '40px' : '32px',
+                            height: isCurrent ? '40px' : '32px',
+                            borderRadius: '50%',
+                            backgroundColor: isCompleted || isCurrent ? '#3B6B4A' : 'white',
+                            border: isFuture ? '2px solid #E5E0D8' : 'none',
+                            color: isFuture ? '#AAAAAA' : 'white',
+                            fontSize: isCurrent ? '16px' : '14px'
+                          }}
+                        >
+                          {week.weekNumber}
+                        </div>
+                        <div className="flex-1 pt-1">
+                          <p
+                            className="text-sm mb-1"
+                            style={{
+                              color: isFuture ? '#AAAAAA' : '#2C2C2C',
+                              fontWeight: isCurrent ? 'bold' : 'normal'
+                            }}
+                          >
+                            {week.title}
+                          </p>
+                          {isCompleted && (
+                            <span className="text-xs font-medium" style={{ color: '#4CAF50' }}>
+                              완료
+                            </span>
+                          )}
+                          {isCurrent && (
+                            <span className="text-xs font-medium" style={{ color: '#3B6B4A' }}>
+                              📌 현재 진행 중
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Stats Card */}
-              <div 
-                className="rounded-xl p-4 space-y-3"
-                style={{ backgroundColor: '#FFF3EB', border: '1px solid #FFE0CC' }}
-              >
-                <div className="flex items-center gap-2">
-                  <span style={{ fontSize: '20px' }}>🔥</span>
-                  <p className="text-sm font-bold" style={{ color: '#2C2C2C' }}>
-                    연속 학습 12일
-                  </p>
-                </div>
+              <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#FFF3EB', border: '1px solid #FFE0CC' }}>
                 <div className="flex items-center gap-2">
                   <span style={{ fontSize: '20px' }}>📚</span>
                   <p className="text-sm font-bold" style={{ color: '#2C2C2C' }}>
-                    이번 주 3시간 학습
+                    전체 {totalCompletedItems}/{totalItems} 강좌 완료
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span style={{ fontSize: '20px' }}>📊</span>
+                  <p className="text-sm font-bold" style={{ color: '#2C2C2C' }}>
+                    진행률 {roadmap.progressPercent}%
                   </p>
                 </div>
               </div>
@@ -435,6 +268,92 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function CourseCard({ item }: { item: RoadmapItem }) {
+  const { course, isCompleted } = item;
+
+  const platformColors: Record<string, string> = {
+    "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
+    KOCW: "bg-[#E3F2FD] text-[#1976D2]",
+    온국민평생배움터: "bg-[#FFE8D6] text-[#A05A2C]",
+    서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
+  };
+
+  const levelColors: Record<string, string> = {
+    입문: "bg-[#E8F0EA] text-[#3B6B4A]",
+    초급: "bg-[#FFF9C4] text-[#827717]",
+    중급: "bg-[#FEF3E7] text-[#E67E22]",
+    심화: "bg-[#FDE8E8] text-[#C0392B]",
+  };
+
+  return (
+    <div
+      className="rounded-xl p-4 flex items-center gap-4"
+      style={{
+        backgroundColor: isCompleted ? '#F0F7ED' : 'white',
+        border: `1px solid ${isCompleted ? '#C8E0D0' : '#E5E0D8'}`
+      }}
+    >
+      <div
+        className="flex-shrink-0 w-[22px] h-[22px] rounded flex items-center justify-center"
+        style={{ backgroundColor: isCompleted ? '#3B6B4A' : 'transparent', border: isCompleted ? 'none' : '2px solid #E5E0D8' }}
+      >
+        {isCompleted && (
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7L5.5 10.5L12 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <p
+            className="text-sm"
+            style={{
+              color: isCompleted ? '#777777' : '#2C2C2C',
+              fontWeight: isCompleted ? 'normal' : 'bold',
+              textDecoration: isCompleted ? 'line-through' : 'none'
+            }}
+          >
+            {course.title}
+          </p>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${platformColors[course.platform] || platformColors["K-MOOC"]}`}>
+            {course.platform}
+          </span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[course.difficulty] || levelColors.입문}`}>
+            {course.difficulty}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {!isCompleted && (
+          <a
+            href={course.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity"
+            style={{ backgroundColor: '#3B6B4A', color: 'white' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            시작하기 →
+          </a>
+        )}
+        {isCompleted && (
+          <button
+            className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
+            style={{ borderColor: '#3B6B4A', color: '#3B6B4A', backgroundColor: 'transparent' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E8F0EA'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            🔁 복습하기
+          </button>
+        )}
+      </div>
     </div>
   );
 }

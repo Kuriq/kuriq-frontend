@@ -1,39 +1,64 @@
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
-
-const weekData = [
-  {
-    weekNumber: 1,
-    title: "파이썬 기초 다지기",
-    totalHours: 5,
-    courses: [
-      { name: "모두를 위한 파이썬", platform: "K-MOOC", level: "입문", duration: "3시간" },
-      { name: "파이썬으로 시작하는 프로그래밍", platform: "평생교육진흥원", level: "입문", duration: "2시간" },
-    ],
-  },
-  {
-    weekNumber: 2,
-    title: "데이터 다루기 기본",
-    totalHours: 5,
-    courses: [
-      { name: "데이터 과학을 위한 파이썬 입문", platform: "K-MOOC", level: "초급", duration: "3시간" },
-      { name: "Pandas 기초와 데이터 전처리", platform: "평생교육진흥원", level: "초급", duration: "2시간" },
-    ],
-  },
-  {
-    weekNumber: 3,
-    title: "데이터 시각화 기초",
-    totalHours: 5,
-    courses: [
-      { name: "Python으로 배우는 데이터 시각화", platform: "K-MOOC", level: "초급", duration: "3시간" },
-      { name: "matplotlib와 seaborn 실습", platform: "한국형 온라인 공개강좌", level: "중급", duration: "2시간" },
-    ],
-  },
-];
+import { getRoadmap, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
 
 export default function RoadmapResultPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Home에서 생성 후 전달받은 경우
+    if (location.state?.roadmap) {
+      setRoadmap(location.state.roadmap);
+      setLoading(false);
+      return;
+    }
+
+    // roadmapId로 조회
+    const roadmapId = location.state?.roadmapId;
+    if (roadmapId) {
+      getRoadmap(roadmapId)
+        .then(setRoadmap)
+        .catch(() => setError("로드맵을 불러오지 못했습니다."))
+        .finally(() => setLoading(false));
+    } else {
+      setError("로드맵 정보를 찾을 수 없습니다.");
+      setLoading(false);
+    }
+  }, [location.state]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
+        <Navigation activeMenu="로드맵" />
+        <main className="flex-1 px-8 py-12 flex items-center justify-center">
+          <p className="text-[16px] text-[#777777]">로드맵을 불러오는 중...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !roadmap) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
+        <Navigation activeMenu="로드맵" />
+        <main className="flex-1 px-8 py-12 flex flex-col items-center justify-center">
+          <p className="text-[16px] text-red-600 mb-4">{error || "로드맵이 없습니다."}</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-2.5 bg-[#3B6B4A] text-white rounded-full font-[600] text-[14px]"
+          >
+            홈으로 돌아가기
+          </button>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
@@ -47,7 +72,9 @@ export default function RoadmapResultPage() {
             </div>
             <div>
               <h1 className="text-[24px] font-[800] text-[#2C2C2C] mb-2">맞춤 로드맵이 완성됐어요!</h1>
-              <p className="text-[14px] text-[#777777]">8주 과정 · 주 5시간 · 강좌 16개</p>
+              <p className="text-[14px] text-[#777777]">
+                {roadmap.totalWeeks}주 과정 · 주 {roadmap.weeklyHours}시간 · 강좌 {roadmap.totalCourses}개
+              </p>
             </div>
           </div>
 
@@ -56,25 +83,21 @@ export default function RoadmapResultPage() {
               <span className="text-[24px]">🎯</span>
               <div>
                 <h2 className="text-[16px] font-[800] text-[#3B6B4A] mb-2">학습 목표</h2>
-                <p className="text-[14px] text-[#2C2C2C] leading-relaxed">비전공자 → 파이썬 기반 데이터 분석 역량 습득</p>
+                <p className="text-[14px] text-[#2C2C2C] leading-relaxed">{roadmap.goal}</p>
               </div>
             </div>
           </div>
 
           <div className="mb-8">
-            {weekData.map((week) => (
-              <RoadmapWeekSection key={week.weekNumber} {...week} />
+            {roadmap.weeks.map((week) => (
+              <RoadmapWeekSection key={week.weekNumber} week={week} />
             ))}
-
-            <div className="text-center py-6">
-              <p className="text-[14px] text-[#999999]">⋯ Week 4~8 계속 ⋯</p>
-            </div>
           </div>
 
           <div className="flex justify-center gap-4 pb-12">
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/dashboard", { state: { roadmapId: roadmap.id } })}
               className="px-8 py-3 bg-[#3B6B4A] text-white rounded-full font-[600] text-[15px] hover:bg-[#2d5438] transition-colors"
             >
               이 로드맵 시작하기
@@ -93,79 +116,79 @@ export default function RoadmapResultPage() {
   );
 }
 
-function RoadmapWeekSection({
-  weekNumber,
-  title,
-  totalHours,
-  courses,
-}: {
-  weekNumber: number;
-  title: string;
-  totalHours: number;
-  courses: Array<{ name: string; platform: string; level: string; duration: string }>;
-}) {
+function RoadmapWeekSection({ week }: { week: RoadmapWeek }) {
   return (
     <div className="mb-8">
       <div className="flex items-center gap-4 mb-4">
         <div className="w-10 h-10 rounded-full bg-[#3B6B4A] text-white flex items-center justify-center font-[800] text-[16px] flex-shrink-0">
-          {weekNumber}
+          {week.weekNumber}
         </div>
         <div className="flex-1">
-          <h3 className="text-[18px] font-[800] text-[#2C2C2C] mb-1">{title}</h3>
-          <p className="text-[13px] text-[#777777]">Week {weekNumber} · 총 {totalHours}시간</p>
+          <h3 className="text-[18px] font-[800] text-[#2C2C2C] mb-1">{week.title}</h3>
+          <p className="text-[13px] text-[#777777]">
+            Week {week.weekNumber} · 총 {week.totalHours}시간 · {week.completedCount}/{week.totalCount} 완료
+          </p>
         </div>
       </div>
 
       <div className="ml-[54px] space-y-3">
-        {courses.map((course) => (
-          <RoadmapCourseCard key={`${weekNumber}-${course.name}`} {...course} />
+        {week.items.map((item) => (
+          <RoadmapCourseCard key={item.id} item={item} />
         ))}
       </div>
     </div>
   );
 }
 
-function RoadmapCourseCard({
-  name,
-  platform,
-  level,
-  duration,
-}: {
-  name: string;
-  platform: string;
-  level: string;
-  duration: string;
-}) {
+function RoadmapCourseCard({ item }: { item: RoadmapItem }) {
+  const { course } = item;
   const platformColors: Record<string, string> = {
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
-    평생교육진흥원: "bg-[#E8F0EA] text-[#3B6B4A]",
-    한국형온라인공개강좌: "bg-[#E8F0EA] text-[#3B6B4A]",
+    KOCW: "bg-[#EBF5FB] text-[#3498DB]",
+    온국민평생배움터: "bg-[#FFF3EB] text-[#E8985E]",
+    서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
   };
 
   const levelColors: Record<string, string> = {
     입문: "bg-[#FFF3EB] text-[#E8985E]",
     초급: "bg-[#FFF3EB] text-[#E8985E]",
     중급: "bg-[#FEF3E7] text-[#E67E22]",
+    심화: "bg-[#FDE8E8] text-[#C0392B]",
   };
+
+  const hoursText = course.estimatedHours
+    ? course.estimatedHours < 1
+      ? `${Math.round(course.estimatedHours * 60)}분`
+      : `${course.estimatedHours}시간`
+    : "";
 
   return (
     <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h4 className="text-[14px] font-[600] text-[#2C2C2C] mb-3">{name}</h4>
+          <h4 className="text-[14px] font-[600] text-[#2C2C2C] mb-3">{course.title}</h4>
           <div className="flex flex-wrap gap-2">
-            <span className={`px-3 py-1 rounded-full text-[11px] font-[600] ${platformColors[platform] || platformColors["K-MOOC"]}`}>
-              {platform}
+            <span className={`px-3 py-1 rounded-full text-[11px] font-[600] ${platformColors[course.platform] || platformColors["K-MOOC"]}`}>
+              {course.platform}
             </span>
-            <span className={`px-3 py-1 rounded-full text-[11px] font-[600] ${levelColors[level] || levelColors.입문}`}>
-              {level}
+            <span className={`px-3 py-1 rounded-full text-[11px] font-[600] ${levelColors[course.difficulty] || levelColors.입문}`}>
+              {course.difficulty}
             </span>
-            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#EBF5FB] text-[#3498DB]">{duration}</span>
+            {hoursText && (
+              <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#EBF5FB] text-[#3498DB]">
+                {hoursText}
+              </span>
+            )}
           </div>
         </div>
-        <button className="ml-4 px-4 py-2 border border-[#3B6B4A] text-[#3B6B4A] rounded-full text-[13px] font-[600] hover:bg-[#E8F0EA] transition-colors whitespace-nowrap">
+        <a
+          href={course.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-4 px-4 py-2 border border-[#3B6B4A] text-[#3B6B4A] rounded-full text-[13px] font-[600] hover:bg-[#E8F0EA] transition-colors whitespace-nowrap"
+        >
           수강 신청 →
-        </button>
+        </a>
       </div>
     </div>
   );
