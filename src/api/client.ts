@@ -145,3 +145,101 @@ export interface StudySpace {
 export async function getNearbySpaces(lat: number, lng: number, radius = 2000) {
   return request<StudySpace[]>(`/api/v1/spaces/nearby?lat=${lat}&lng=${lng}&radius=${radius}`);
 }
+
+// ── User Profile ──────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  ageGroup?: string;
+}
+
+export async function getProfile() {
+  return request<UserProfile>("/api/v1/users/me");
+}
+
+export async function deleteAccount(password?: string) {
+  if (password) {
+    return request<void>(`/api/v1/users/me?password=${encodeURIComponent(password)}`, { method: "DELETE" });
+  }
+  return request<void>("/api/v1/users/me", { method: "DELETE" });
+}
+
+// ── Social Accounts ───────────────────────────────────
+
+export interface SocialAccount {
+  id: string;
+  provider: string;
+  email: string;
+  linkedAt: string;
+}
+
+export async function getSocialAccounts() {
+  return request<SocialAccount[]>("/api/v1/users/me/social-accounts");
+}
+
+export async function unlinkSocialAccount(provider: string) {
+  return request<void>(`/api/v1/users/me/social-accounts/${provider}`, { method: "DELETE" });
+}
+
+// ── Notification Settings ─────────────────────────────
+
+export interface NotificationSettings {
+  emailEnabled: boolean;
+  kakaoEnabled: boolean;
+  learningDay: string;
+  learningTime: string;
+  weeklyStartAlert: boolean;
+  incompleteReminder: boolean;
+  inactivityAlert: boolean;
+  completionAlert: boolean;
+}
+
+export async function getNotificationSettings() {
+  return request<NotificationSettings>("/api/v1/users/me/notifications/settings");
+}
+
+export async function updateNotificationSettings(settings: Partial<NotificationSettings>) {
+  return request<NotificationSettings>("/api/v1/users/me/notifications/settings", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  });
+}
+
+// ── Learning Stats ────────────────────────────────────
+
+export interface UserStats {
+  totalCompletedCourses: number;
+  totalLearningHours: number;
+  streakDays: number;
+  completedRoadmapCount: number;
+}
+
+export async function getUserStats() {
+  return request<UserStats>("/api/v1/users/me/stats");
+}
+
+export interface CategoryStat {
+  category: string;
+  completedCount: number;
+  progressPercent: number;
+}
+
+export async function getCategoryStats() {
+  return request<CategoryStat[]>("/api/v1/users/me/stats/categories");
+}
+
+export interface LearningHistoryItem {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  platform: string;
+  category: string;
+  completedAt: string;
+  sourceRoadmapId: string;
+}
+
+export async function getLearningHistory(page = 0, size = 20) {
+  return request<LearningHistoryItem[]>(`/api/v1/users/me/history?page=${page}&size=${size}`);
+}

@@ -1,7 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, MessageCircle } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
+import { getNotificationSettings, updateNotificationSettings, type NotificationSettings } from "../api/client";
+
+const DAY_MAP: Record<string, string> = {
+  MON: "월요일", TUE: "화요일", WED: "수요일", THU: "목요일",
+  FRI: "금요일", SAT: "토요일", SUN: "일요일",
+};
+const REVERSE_DAY_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(DAY_MAP).map(([k, v]) => [v, k])
+);
+
+function formatTimeToDisplay(time: string): string {
+  // "09:00:00" → "오전 09:00"
+  const [h, m] = time.split(":");
+  const hour = parseInt(h, 10);
+  const period = hour < 12 ? "오전" : "오후";
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${period} ${String(displayHour).padStart(2, "0")}:${m}`;
+}
+
+function formatDisplayToTime(display: string): string {
+  // "오전 09:00" → "09:00:00"
+  const [period, time] = display.split(" ");
+  let [h, m] = time.split(":");
+  let hour = parseInt(h, 10);
+  if (period === "오후" && hour !== 12) hour += 12;
+  if (period === "오전" && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, "0")}:${m}:00`;
+}
 
 export default function NotificationSettingsPage() {
   const [kakaoEnabled, setKakaoEnabled] = useState(true);
@@ -12,6 +40,9 @@ export default function NotificationSettingsPage() {
   const [incompleteReminderEnabled, setIncompleteReminderEnabled] = useState(true);
   const [inactiveNoticeEnabled, setInactiveNoticeEnabled] = useState(true);
   const [completionCongratEnabled, setCompletionCongratEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const days = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
   const times = [
@@ -20,19 +51,54 @@ export default function NotificationSettingsPage() {
     "오후 06:00", "오후 07:00", "오후 08:00", "오후 09:00", "오후 10:00",
   ];
 
-  const handleSave = () => {
-    console.log("Settings saved:", {
-      kakaoEnabled,
-      emailEnabled,
-      selectedDay,
-      selectedTime,
-      weeklyStartEnabled,
-      incompleteReminderEnabled,
-      inactiveNoticeEnabled,
-      completionCongratEnabled,
-    });
-    alert("설정이 저장되었습니다!");
+  useEffect(() => {
+    getNotificationSettings()
+      .then((settings: NotificationSettings) => {
+        setKakaoEnabled(settings.kakaoEnabled);
+        setEmailEnabled(settings.emailEnabled);
+        setSelectedDay(DAY_MAP[settings.learningDay] || "월요일");
+        setSelectedTime(formatTimeToDisplay(settings.learningTime));
+        setWeeklyStartEnabled(settings.weeklyStartAlert);
+        setIncompleteReminderEnabled(settings.incompleteReminder);
+        setInactiveNoticeEnabled(settings.inactivityAlert);
+        setCompletionCongratEnabled(settings.completionAlert);
+      })
+      .catch(() => setError("설정을 불러오지 못했습니다."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateNotificationSettings({
+        kakaoEnabled,
+        emailEnabled,
+        learningDay: REVERSE_DAY_MAP[selectedDay] || "MON",
+        learningTime: formatDisplayToTime(selectedTime),
+        weeklyStartAlert: weeklyStartEnabled,
+        incompleteReminder: incompleteReminderEnabled,
+        inactivityAlert: inactiveNoticeEnabled,
+        completionAlert: completionCongratEnabled,
+      });
+      alert("설정이 저장되었습니다!");
+    } catch {
+      setError("저장에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
+        <Navigation activeMenu="마이페이지" />
+        <main className="flex-1 px-8 py-12 flex items-center justify-center">
+          <p className="text-[16px] text-[#777777]">설정을 불러오는 중...</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
@@ -47,6 +113,12 @@ export default function NotificationSettingsPage() {
             </div>
             <p className="text-[14px] text-[#777777]">학습 흐름을 놓치지 않게 큐리가 제때 알려드릴게요.</p>
           </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-[14px]">
+              {error}
+            </div>
+          )}
 
           <div className="bg-white border border-[#E5E0D8] rounded-2xl p-8 shadow-sm mb-6">
             <h2 className="text-[18px] font-[800] text-[#2C2C2C] mb-6">알림 받을 곳</h2>
@@ -113,9 +185,10 @@ export default function NotificationSettingsPage() {
             <button
               type="button"
               onClick={handleSave}
-              className="px-8 py-3.5 bg-[#3B6B4A] text-white rounded-xl text-[15px] font-[600] hover:bg-[#2d5438] transition-colors shadow-sm"
+              disabled={saving}
+              className="px-8 py-3.5 bg-[#3B6B4A] text-white rounded-xl text-[15px] font-[600] hover:bg-[#2d5438] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              설정 저장하기
+              {saving ? "저장 중..." : "설정 저장하기"}
             </button>
           </div>
         </div>
