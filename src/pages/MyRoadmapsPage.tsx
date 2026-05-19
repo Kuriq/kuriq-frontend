@@ -3,6 +3,8 @@ import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { Sparkles, MoreVertical, ChevronDown } from "lucide-react";
 import { getMyRoadmaps, deleteRoadmap, activateRoadmap, type Roadmap } from "../api/client";
+import kuriDefault from "../assets/images/kuri-default.png";
+import kuriLogo from "../assets/images/kuri-logo.png";
 
 type FilterType = "all" | "completed" | "abandoned";
 
@@ -81,24 +83,7 @@ export default function MyRoadmapsPage() {
         <main className="flex-1 px-8 py-8">
           <div className="max-w-[1000px] mx-auto">
             <div className="flex flex-col items-center justify-center" style={{ minHeight: '60vh' }}>
-              <svg width="120" height="120" viewBox="0 0 120 120" fill="none" className="mb-6">
-                <ellipse cx="60" cy="67.5" rx="34.5" ry="40.5" fill="#E8985E" />
-                <ellipse cx="60" cy="75" rx="22.5" ry="27" fill="#FFF3EB" />
-                <path d="M 34.5 37.5 Q 27 22.5 30 19.5 Q 34.5 15 40.5 25.5 L 37.5 40.5 Z" fill="#D67A45" />
-                <path d="M 85.5 37.5 Q 93 22.5 90 19.5 Q 85.5 15 79.5 25.5 L 82.5 40.5 Z" fill="#D67A45" />
-                <circle cx="48" cy="52.5" r="13.5" fill="white" />
-                <circle cx="72" cy="52.5" r="13.5" fill="white" />
-                <circle cx="48.5" cy="52.5" r="8.25" fill="#2C2C2C" />
-                <circle cx="71.5" cy="52.5" r="8.25" fill="#2C2C2C" />
-                <circle cx="49.5" cy="49.5" r="3.75" fill="white" />
-                <circle cx="72.5" cy="49.5" r="3.75" fill="white" />
-                <path d="M 60 60 L 55.5 67.5 L 64.5 67.5 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="1.5" />
-                <ellipse cx="60" cy="27" rx="30" ry="7.5" fill="#2C2C2C" />
-                <rect x="45" y="19.5" width="30" height="7.5" fill="#2C2C2C" />
-                <rect x="34.5" y="19.5" width="51" height="3" fill="#2C2C2C" />
-                <line x1="85.5" y1="21" x2="93" y2="18" stroke="#E8985E" strokeWidth="2.25" />
-                <circle cx="93" cy="18" r="3" fill="#E8985E" />
-              </svg>
+              <img src={kuriDefault} alt="" className="mb-6" style={{ width: 120, height: 120 }} />
               <h2 className="font-bold mb-2" style={{ color: '#2C2C2C', fontSize: '20px' }}>
                 아직 만든 로드맵이 없어요
               </h2>
@@ -172,22 +157,7 @@ export default function MyRoadmapsPage() {
                 style={{ border: '2px solid #3B6B4A', boxShadow: '0 2px 8px rgba(59, 107, 74, 0.08)' }}
               >
                 <div className="flex items-start gap-3 mb-4">
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="flex-shrink-0">
-                    <ellipse cx="16" cy="18" rx="9.2" ry="10.8" fill="#E8985E" />
-                    <ellipse cx="16" cy="20" rx="6" ry="7.2" fill="#FFF3EB" />
-                    <path d="M 9.2 10 Q 7.2 6 8 5.2 Q 9.2 4 10.8 6.8 L 10 10.8 Z" fill="#D67A45" />
-                    <path d="M 22.8 10 Q 24.8 6 24 5.2 Q 22.8 4 21.2 6.8 L 22 10.8 Z" fill="#D67A45" />
-                    <circle cx="12.8" cy="14" r="3.6" fill="white" />
-                    <circle cx="19.2" cy="14" r="3.6" fill="white" />
-                    <circle cx="13" cy="14" r="2.2" fill="#2C2C2C" />
-                    <circle cx="19" cy="14" r="2.2" fill="#2C2C2C" />
-                    <circle cx="13.2" cy="13.2" r="1" fill="white" />
-                    <circle cx="19.2" cy="13.2" r="1" fill="white" />
-                    <path d="M 16 16 L 14.8 18 L 17.2 18 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="0.4" />
-                    <ellipse cx="16" cy="7.2" rx="8" ry="2" fill="#2C2C2C" />
-                    <rect x="12" y="5.2" width="8" height="2" fill="#2C2C2C" />
-                    <rect x="9.2" y="5.2" width="13.6" height="0.8" fill="#2C2C2C" />
-                  </svg>
+                  <img src={kuriLogo} alt="" className="flex-shrink-0" style={{ width: 32, height: 32 }} />
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">

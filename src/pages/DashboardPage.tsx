@@ -3,6 +3,7 @@ import { useLocation } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getRoadmap, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
+import kuriWink from "../assets/images/kuri-wink.png";
 
 export default function DashboardPage() {
   const location = useLocation();
@@ -115,20 +116,7 @@ export default function DashboardPage() {
 
           {/* Quri Greeting Card */}
           <div className="rounded-[14px] p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: '#E8F0EA' }}>
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <ellipse cx="18" cy="20.25" rx="10.5" ry="12" fill="#E8985E" />
-              <ellipse cx="18" cy="22.5" rx="6.75" ry="8.25" fill="#FFF3EB" />
-              <path d="M 10.5 11.25 Q 8.25 6.75 9 5.25 Q 10.5 4.5 12 7.5 L 11.25 12 Z" fill="#D67A45" />
-              <path d="M 25.5 11.25 Q 27.75 6.75 27 5.25 Q 25.5 4.5 24 7.5 L 24.75 12 Z" fill="#D67A45" />
-              <circle cx="14.25" cy="15.75" r="4.2" fill="white" />
-              <circle cx="14.7" cy="15.75" r="2.55" fill="#2C2C2C" />
-              <circle cx="15" cy="15" r="1.2" fill="white" />
-              <path d="M 19.5 15.75 Q 21.75 14.5 24 15.75" stroke="#2C2C2C" strokeWidth="2" strokeLinecap="round" fill="none" />
-              <path d="M 18 18 L 16.5 20.25 L 19.5 20.25 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="0.5" />
-              <ellipse cx="18" cy="8.25" rx="9" ry="2.25" fill="#2C2C2C" />
-              <rect x="13.5" y="6" width="9" height="2.25" fill="#2C2C2C" />
-              <rect x="10.5" y="6" width="15" height="0.75" fill="#2C2C2C" />
-            </svg>
+            <img src={kuriWink} alt="" style={{ width: 36, height: 36 }} />
             <p className="text-sm font-medium" style={{ color: '#2C2C2C' }}>
               {roadmap.progressPercent >= 50
                 ? "절반 넘었어요! 잘 하고 있어요 🎉"

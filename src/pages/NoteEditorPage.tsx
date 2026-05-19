@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { Sparkles, Bold, Italic, List, ListOrdered, Code, Link, ChevronDown, Send, ChevronRight } from "lucide-react";
+import kuriLogo from "../assets/images/kuri-logo.png";
+import kuriWink from "../assets/images/kuri-wink.png";
 
 export default function NoteEditorPage() {
   const navigate = useNavigate();
@@ -532,24 +534,7 @@ scores = [90, 85, 95]
                     {/* Header */}
                     <div className="flex items-center gap-2 mb-4">
                       {/* Quri Owl Icon */}
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <ellipse cx="12" cy="13.5" rx="7" ry="8" fill="#E8985E" />
-                        <ellipse cx="12" cy="15" rx="4.5" ry="5.5" fill="#FFF3EB" />
-                        <path d="M 7 7.5 Q 5.5 4.5 6.5 3.5 Q 7 3 8 5 L 7.5 8 Z" fill="#D67A45" />
-                        <path d="M 17 7.5 Q 18.5 4.5 17.5 3.5 Q 17 3 16 5 L 16.5 8 Z" fill="#D67A45" />
-                        <circle cx="9.5" cy="10.5" r="2.8" fill="white" />
-                        <circle cx="14.5" cy="10.5" r="2.8" fill="white" />
-                        <circle cx="9.8" cy="10.5" r="1.7" fill="#2C2C2C" />
-                        <circle cx="14.2" cy="10.5" r="1.7" fill="#2C2C2C" />
-                        <circle cx="10" cy="10" r="0.8" fill="white" />
-                        <circle cx="14.5" cy="10" r="0.8" fill="white" />
-                        <path d="M 12 12 L 11 13.5 L 13 13.5 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="0.3" />
-                        <ellipse cx="12" cy="5.5" rx="6" ry="1.5" fill="#2C2C2C" />
-                        <rect x="9" y="4" width="6" height="1.5" fill="#2C2C2C" />
-                        <rect x="7" y="4" width="10" height="0.5" fill="#2C2C2C" />
-                        <line x1="17" y1="4.3" x2="18.5" y2="3.5" stroke="#E8985E" strokeWidth="0.5" />
-                        <circle cx="18.5" cy="3.5" r="0.6" fill="#E8985E" />
-                      </svg>
+                      <img src={kuriLogo} alt="" style={{ width: 24, height: 24 }} />
                       <div className="flex-1">
                         <h3 className="font-bold" style={{ color: '#2C2C2C', fontSize: '14px' }}>
                           큐리에게 질문하기
@@ -580,22 +565,7 @@ scores = [90, 85, 95]
                           return (
                             <div key={message.id} className="flex gap-2">
                               {/* Quri Avatar */}
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-1">
-                                <ellipse cx="12" cy="13.5" rx="7" ry="8" fill="#E8985E" />
-                                <ellipse cx="12" cy="15" rx="4.5" ry="5.5" fill="#FFF3EB" />
-                                <path d="M 7 7.5 Q 5.5 4.5 6.5 3.5 Q 7 3 8 5 L 7.5 8 Z" fill="#D67A45" />
-                                <path d="M 17 7.5 Q 18.5 4.5 17.5 3.5 Q 17 3 16 5 L 16.5 8 Z" fill="#D67A45" />
-                                <circle cx="9.5" cy="10.5" r="2.8" fill="white" />
-                                <circle cx="14.5" cy="10.5" r="2.8" fill="white" />
-                                <circle cx="9.8" cy="10.5" r="1.7" fill="#2C2C2C" />
-                                <circle cx="14.2" cy="10.5" r="1.7" fill="#2C2C2C" />
-                                <circle cx="10" cy="10" r="0.8" fill="white" />
-                                <circle cx="14.5" cy="10" r="0.8" fill="white" />
-                                <path d="M 12 12 L 11 13.5 L 13 13.5 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="0.3" />
-                                <ellipse cx="12" cy="5.5" rx="6" ry="1.5" fill="#2C2C2C" />
-                                <rect x="9" y="4" width="6" height="1.5" fill="#2C2C2C" />
-                                <rect x="7" y="4" width="10" height="0.5" fill="#2C2C2C" />
-                              </svg>
+                              <img src={kuriLogo} alt="" style={{ width: 24, height: 24 }} className="flex-shrink-0 mt-1" />
 
                               {/* Message bubble */}
                               <div className="flex-1">
@@ -677,39 +647,7 @@ scores = [90, 85, 95]
           >
             {/* Quri Mascot - Winking */}
             <div className="flex justify-center mb-6">
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                {/* Body */}
-                <ellipse cx="40" cy="45" rx="23" ry="27" fill="#E8985E" />
-                <ellipse cx="40" cy="50" rx="15" ry="18" fill="#FFF3EB" />
-                
-                {/* Ear tufts */}
-                <path d="M 23 25 Q 18 15 20 13 Q 23 10 27 17 L 25 27 Z" fill="#D67A45" />
-                <path d="M 57 25 Q 62 15 60 13 Q 57 10 53 17 L 55 27 Z" fill="#D67A45" />
-                
-                {/* Left eye - OPEN */}
-                <circle cx="32" cy="35" r="9" fill="white" />
-                <circle cx="32.5" cy="35" r="5.5" fill="#2C2C2C" />
-                <circle cx="33.5" cy="33" r="2.5" fill="white" />
-                
-                {/* Right eye - WINKING (line) */}
-                <path d="M 42 35 Q 48 33 54 35" stroke="#2C2C2C" strokeWidth="3" strokeLinecap="round" fill="none" />
-                
-                {/* Beak */}
-                <path d="M 40 40 L 37 45 L 43 45 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="1" />
-                
-                {/* Graduation cap */}
-                <ellipse cx="40" cy="18" rx="20" ry="5" fill="#2C2C2C" />
-                <rect x="30" y="13" width="20" height="5" fill="#2C2C2C" />
-                <rect x="23" y="13" width="34" height="2" fill="#2C2C2C" />
-                
-                {/* Tassel */}
-                <line x1="57" y1="14" x2="62" y2="12" stroke="#E8985E" strokeWidth="1.5" />
-                <circle cx="62" cy="12" r="2" fill="#E8985E" />
-                
-                {/* Celebration sparkles */}
-                <text x="10" y="25" fontSize="16">✨</text>
-                <text x="62" y="50" fontSize="16">✨</text>
-              </svg>
+              <img src={kuriWink} alt="" style={{ width: 80, height: 80 }} />
             </div>
 
             {/* Title */}
@@ -764,17 +702,7 @@ scores = [90, 85, 95]
               style={{ backgroundColor: '#FFF3EB' }}
             >
               {/* Small Quri Icon */}
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                <ellipse cx="12" cy="13.5" rx="7" ry="8" fill="#E8985E" />
-                <ellipse cx="12" cy="15" rx="4.5" ry="5.5" fill="#FFF3EB" />
-                <circle cx="9.5" cy="10.5" r="2.8" fill="white" />
-                <circle cx="14.5" cy="10.5" r="2.8" fill="white" />
-                <circle cx="9.8" cy="10.5" r="1.7" fill="#2C2C2C" />
-                <circle cx="14.2" cy="10.5" r="1.7" fill="#2C2C2C" />
-                <path d="M 12 12 L 11 13.5 L 13 13.5 Z" fill="#E8985E" />
-                <ellipse cx="12" cy="5.5" rx="6" ry="1.5" fill="#2C2C2C" />
-                <rect x="9" y="4" width="6" height="1.5" fill="#2C2C2C" />
-              </svg>
+              <img src={kuriLogo} alt="" style={{ width: 24, height: 24 }} className="flex-shrink-0" />
               <p className="text-sm leading-relaxed" style={{ color: '#8B5A3C' }}>
                 5문제 중 4개를 맞혔어요! '자료형 명칭' 부분을 노트에서 한 번 더 확인해 보세요.
               </p>

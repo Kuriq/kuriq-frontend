@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import kuriLoading from "../assets/images/kuri-loading.png";
 
 export default function LoadingRoadmapPage() {
   const navigate = useNavigate();
@@ -70,48 +71,12 @@ export default function LoadingRoadmapPage() {
           </div>
 
           {/* Quri SVG - Thinking Expression (Desktop: 120px, Mobile: 96px) */}
-          <svg 
-            className="relative z-10 w-24 h-24 md:w-[120px] md:h-[120px]" 
-            viewBox="0 0 120 120" 
-            fill="none"
+          <img
+            src={kuriLoading}
+            alt=""
+            className="relative z-10 w-24 h-24 md:w-[120px] md:h-[120px]"
             style={{ animation: 'gentleBob 3s ease-in-out infinite' }}
-          >
-            {/* Body */}
-            <ellipse cx="60" cy="67.5" rx="34.5" ry="40.5" fill="#E8985E" />
-            <ellipse cx="60" cy="75" rx="22.5" ry="27" fill="#FFF3EB" />
-            
-            {/* Ear tufts */}
-            <path d="M 34.5 37.5 Q 27 22.5 30 19.5 Q 34.5 15 40.5 25.5 L 37.5 40.5 Z" fill="#D67A45" />
-            <path d="M 85.5 37.5 Q 93 22.5 90 19.5 Q 85.5 15 79.5 25.5 L 82.5 40.5 Z" fill="#D67A45" />
-            
-            {/* Eyes - THINKING (looking upward) */}
-            {/* Left eye */}
-            <ellipse cx="48" cy="48" rx="13.5" ry="15" fill="white" />
-            <ellipse cx="48" cy="45" rx="8.25" ry="9" fill="#2C2C2C" />
-            <circle cx="49.5" cy="42" r="3.75" fill="white" />
-            
-            {/* Right eye */}
-            <ellipse cx="72" cy="48" rx="13.5" ry="15" fill="white" />
-            <ellipse cx="72" cy="45" rx="8.25" ry="9" fill="#2C2C2C" />
-            <circle cx="73.5" cy="42" r="3.75" fill="white" />
-            
-            {/* Beak */}
-            <path d="M 60 60 L 55.5 67.5 L 64.5 67.5 Z" fill="#E8985E" stroke="#D67A45" strokeWidth="1.5" />
-            
-            {/* Graduation cap */}
-            <ellipse cx="60" cy="27" rx="30" ry="7.5" fill="#2C2C2C" />
-            <rect x="45" y="19.5" width="30" height="7.5" fill="#2C2C2C" />
-            <rect x="34.5" y="19.5" width="51" height="3" fill="#2C2C2C" />
-            
-            {/* Tassel */}
-            <line x1="85.5" y1="21" x2="93" y2="18" stroke="#E8985E" strokeWidth="2.25" />
-            <circle cx="93" cy="18" r="3" fill="#E8985E" />
-            
-            {/* Thought bubble - small dots */}
-            <circle cx="85" cy="35" r="2.5" fill="#D67A45" opacity="0.4" />
-            <circle cx="92" cy="28" r="3.5" fill="#D67A45" opacity="0.3" />
-            <circle cx="100" cy="22" r="4.5" fill="#D67A45" opacity="0.2" />
-          </svg>
+          />
         </div>
 
         {/* Loading Message - with fade transition */}
