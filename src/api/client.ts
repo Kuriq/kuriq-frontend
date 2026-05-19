@@ -243,3 +243,86 @@ export interface LearningHistoryItem {
 export async function getLearningHistory(page = 0, size = 20) {
   return request<LearningHistoryItem[]>(`/api/v1/users/me/history?page=${page}&size=${size}`);
 }
+
+// ── Roadmap ───────────────────────────────────────────
+
+export interface RoadmapCourse {
+  id: string;
+  title: string;
+  platform: string;
+  institution: string;
+  category: string;
+  difficulty: string;
+  durationWeeks: number;
+  estimatedHours: number;
+  hasCertificate: boolean;
+  url: string;
+}
+
+export interface RoadmapItem {
+  id: string;
+  weekNumber: number;
+  orderInWeek: number;
+  isCompleted: boolean;
+  completedAt: string | null;
+  course: RoadmapCourse;
+}
+
+export interface RoadmapWeek {
+  weekNumber: number;
+  title: string;
+  description: string;
+  totalHours: number;
+  completedCount: number;
+  totalCount: number;
+  weekProgressPercent: number;
+  items: RoadmapItem[];
+}
+
+export interface Roadmap {
+  id: string;
+  goal: string;
+  prompt: string;
+  totalWeeks: number;
+  weeklyHours: number;
+  totalCourses: number;
+  isActive: boolean;
+  isCompleted: boolean;
+  currentWeek: number;
+  progressPercent: number;
+  createdAt: string;
+  activatedAt: string | null;
+  completedAt: string | null;
+  weeks: RoadmapWeek[];
+}
+
+export interface RoadmapListResponse {
+  content: Roadmap[];
+  currentPage: number;
+  size: number;
+}
+
+export async function generateRoadmap(prompt: string) {
+  return request<Roadmap>("/api/v1/roadmap/generate", {
+    method: "POST",
+    body: JSON.stringify({ prompt }),
+  });
+}
+
+export async function getMyRoadmaps(page = 0, size = 10) {
+  return request<RoadmapListResponse>(`/api/v1/roadmap/me?page=${page}&size=${size}`);
+}
+
+export async function getRoadmap(roadmapId: string) {
+  return request<Roadmap>(`/api/v1/roadmap/${roadmapId}`);
+}
+
+export async function activateRoadmap(roadmapId: string) {
+  return request<Roadmap>(`/api/v1/roadmap/${roadmapId}/activate`, {
+    method: "PATCH",
+  });
+}
+
+export async function deleteRoadmap(roadmapId: string) {
+  return request<void>(`/api/v1/roadmap/${roadmapId}`, { method: "DELETE" });
+}
