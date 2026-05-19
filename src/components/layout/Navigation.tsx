@@ -1,17 +1,27 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 
 interface NavigationProps {
   activeMenu?: string;
 }
 
 export function Navigation({ activeMenu = "홈" }: NavigationProps) {
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
   const menuItems = [
     { label: "홈", path: "/" },
     { label: "로드맵", path: "/roadmap" },
     { label: "대시보드", path: "/dashboard" },
     { label: "강좌 검색", path: "/search" },
+    { label: "장소추천", path: "/learning-spaces" },
     { label: "마이페이지", path: "/mypage" },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <nav className="bg-white border-b border-[#E5E0D8] px-8 py-4">
@@ -59,6 +69,23 @@ export function Navigation({ activeMenu = "홈" }: NavigationProps) {
               {item.label}
             </Link>
           ))}
+
+          {/* Auth button */}
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="ml-2 px-4 py-2 rounded-full text-[#777777] font-[400] hover:bg-[#F8F6F1] transition-colors"
+            >
+              로그아웃
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              className="ml-2 px-4 py-2 rounded-full bg-[#3B6B4A] text-white font-[600] hover:bg-[#2d5438] transition-colors"
+            >
+              로그인
+            </Link>
+          )}
         </div>
       </div>
     </nav>

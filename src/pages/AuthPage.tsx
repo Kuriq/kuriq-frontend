@@ -1,8 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { OwlMascot } from "../components/common/OwlMascot";
+import { useAuth } from "../context/AuthContext";
+import { getSocialAuthorizeUrl } from "../api/client";
 
 export default function AuthPage() {
+  const navigate = useNavigate();
+  const { login, signup } = useAuth();
   const [activeTab, setActiveTab] = useState("signup");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -12,15 +17,48 @@ export default function AuthPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("회원가입:", { signupEmail, signupPassword, signupName, signupAge, agreedToTerms });
+    setError("");
+    setLoading(true);
+    try {
+      const ageGroupMap: Record<string, string> = {
+        "20대": "TWENTIES", "30대": "THIRTIES", "40대": "FORTIES",
+        "50대": "FIFTIES", "60대 이상": "SIXTIES_OR_ABOVE",
+      };
+      await signup(signupEmail, signupPassword, signupName, ageGroupMap[signupAge]);
+      navigate("/", { replace: true });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "회원가입에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("로그인:", { loginEmail, loginPassword, rememberMe });
+    setError("");
+    setLoading(true);
+    try {
+      await login(loginEmail, loginPassword);
+      navigate("/", { replace: true });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (provider: "kakao" | "google" | "naver") => {
+    try {
+      const { authorizationUrl } = await getSocialAuthorizeUrl(provider);
+      window.location.href = authorizationUrl;
+    } catch {
+      setError("소셜 로그인 연결에 실패했습니다.");
+    }
   };
 
   return (
@@ -32,13 +70,19 @@ export default function AuthPage() {
 
       <div className="w-full max-w-[440px] bg-white border border-[#E5E0D8] rounded-[20px] shadow-lg p-8">
         <div className="flex border-b border-[#E5E0D8] mb-8">
-          <AuthTabButton active={activeTab === "signup"} onClick={() => setActiveTab("signup")}>
+          <AuthTabButton active={activeTab === "signup"} onClick={() => { setActiveTab("signup"); setError(""); }}>
             회원가입
           </AuthTabButton>
-          <AuthTabButton active={activeTab === "login"} onClick={() => setActiveTab("login")}>
+          <AuthTabButton active={activeTab === "login"} onClick={() => { setActiveTab("login"); setError(""); }}>
             로그인
           </AuthTabButton>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-[13px] text-red-600">
+            {error}
+          </div>
+        )}
 
         {activeTab === "signup" ? (
           <form onSubmit={handleSignup}>
@@ -76,14 +120,14 @@ export default function AuthPage() {
 
             <button
               type="submit"
-              disabled={!agreedToTerms}
+              disabled={!agreedToTerms || loading}
               className="w-full h-12 bg-[#3B6B4A] text-white rounded-xl text-[15px] font-[600] hover:bg-[#2d5438] transition-colors disabled:bg-[#C0C0C0] disabled:cursor-not-allowed"
             >
-              가입하기
+              {loading ? "처리 중..." : "가입하기"}
             </button>
 
             <SocialDivider />
-            <SocialLoginButtons mode="signup" />
+            <SocialLoginButtons mode="signup" onSocial={handleSocialLogin} />
           </form>
         ) : (
           <form onSubmit={handleLogin}>
@@ -96,9 +140,10 @@ export default function AuthPage() {
 
             <button
               type="submit"
-              className="w-full h-12 bg-[#3B6B4A] text-white rounded-xl text-[15px] font-[600] hover:bg-[#2d5438] transition-colors"
+              disabled={loading}
+              className="w-full h-12 bg-[#3B6B4A] text-white rounded-xl text-[15px] font-[600] hover:bg-[#2d5438] transition-colors disabled:bg-[#C0C0C0] disabled:cursor-not-allowed"
             >
-              로그인
+              {loading ? "처리 중..." : "로그인"}
             </button>
 
             <div className="text-center mt-4">
@@ -108,7 +153,7 @@ export default function AuthPage() {
             </div>
 
             <SocialDivider />
-            <SocialLoginButtons mode="login" />
+            <SocialLoginButtons mode="login" onSocial={handleSocialLogin} />
           </form>
         )}
       </div>
@@ -272,27 +317,26 @@ function SocialDivider() {
   );
 }
 
-function SocialLoginButtons({ mode }: { mode: "signup" | "login" }) {
+function SocialLoginButtons({ mode, onSocial }: { mode: "signup" | "login"; onSocial: (provider: "kakao" | "google" | "naver") => void }) {
   const suffix = mode === "signup" ? "시작하기" : "계속하기";
-  const action = mode === "signup" ? "회원가입" : "로그인";
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={() => console.log(`카카오 ${action}`)} className="w-full h-12 bg-[#FEE500] text-[#000000] rounded-xl text-[15px] font-[600] hover:bg-[#fdd800] transition-colors flex items-center justify-center gap-2">
+      <button type="button" onClick={() => onSocial("kakao")} className="w-full h-12 bg-[#FEE500] text-[#000000] rounded-xl text-[15px] font-[600] hover:bg-[#fdd800] transition-colors flex items-center justify-center gap-2">
         <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
           <path d="M10 0C4.477 0 0 3.372 0 7.532c0 2.753 1.832 5.162 4.575 6.527-.194.714-.744 2.798-.851 3.203 0 0-.055.449.236.617.29.168.63.005.63.005 1.064-.145 4.917-3.162 5.706-3.682.57.078 1.156.12 1.754.12 5.523 0 10-3.372 10-7.532C20 3.372 15.523 0 10 0z" fill="currentColor"/>
         </svg>
         카카오로 {suffix}
       </button>
 
-      <button type="button" onClick={() => console.log(`네이버 ${action}`)} className="w-full h-12 bg-[#03C75A] text-white rounded-xl text-[15px] font-[600] hover:bg-[#02b350] transition-colors flex items-center justify-center gap-2">
+      <button type="button" onClick={() => onSocial("naver")} className="w-full h-12 bg-[#03C75A] text-white rounded-xl text-[15px] font-[600] hover:bg-[#02b350] transition-colors flex items-center justify-center gap-2">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M13.6 10.8L6.2 0H0v20h6.4V9.2L13.8 20H20V0h-6.4v10.8z" fill="white"/>
         </svg>
         네이버로 {suffix}
       </button>
 
-      <button type="button" onClick={() => console.log(`구글 ${action}`)} className="w-full h-12 bg-white border border-[#E5E0D8] text-[#2C2C2C] rounded-xl text-[15px] font-[600] hover:bg-[#F8F6F1] transition-colors flex items-center justify-center gap-2">
+      <button type="button" onClick={() => onSocial("google")} className="w-full h-12 bg-white border border-[#E5E0D8] text-[#2C2C2C] rounded-xl text-[15px] font-[600] hover:bg-[#F8F6F1] transition-colors flex items-center justify-center gap-2">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.351z" fill="#4285F4"/>
           <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853"/>

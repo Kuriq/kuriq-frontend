@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
+import { useAuth } from "./context/AuthContext";
 import Home from "./pages/Home";
 import MyRoadmapsPage from "./pages/MyRoadmapsPage";
 import RoadmapResultPage from "./pages/RoadmapResultPage";
@@ -13,57 +14,35 @@ import LearningSpacesPage from "./pages/LearningSpacesPage";
 import NoteEditorPage from "./pages/NoteEditorPage";
 import LoadingRoadmapPage from "./pages/LoadingRoadmapPage";
 
+// ── Protected Route Wrapper ──────────────────────────
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  // useAuth는 RouterProvider 내부에서 동작하므로 별도 컴포넌트로 분리
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/auth" replace />;
+}
+
+// ── Route Definitions ────────────────────────────────
+// Public routes (로그인 없이 접근 가능)
+//   /, /auth, /search, /learning-spaces, /ai-review-demo
+// Protected routes (로그인 필요)
+//   /roadmap, /roadmap-result, /loading-roadmap, /dashboard,
+//   /mypage, /notifications, /quiz, /note-editor
+
 export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Home />,
-  },
-  {
-    path: "/roadmap",
-    element: <MyRoadmapsPage />,
-  },
-  {
-    path: "/roadmap-result",
-    element: <RoadmapResultPage />,
-  },
-  {
-    path: "/loading-roadmap",
-    element: <LoadingRoadmapPage />,
-  },
-  {
-    path: "/dashboard",
-    element: <DashboardPage />,
-  },
-  {
-    path: "/search",
-    element: <SearchPage />,
-  },
-  {
-    path: "/mypage",
-    element: <MyPage />,
-  },
-  {
-    path: "/auth",
-    element: <AuthPage />,
-  },
-  {
-    path: "/notifications",
-    element: <NotificationSettingsPage />,
-  },
-  {
-    path: "/ai-review-demo",
-    element: <AIReviewNoteDemoPage />,
-  },
-  {
-    path: "/quiz",
-    element: <QuizPage />,
-  },
-  {
-    path: "/learning-spaces",
-    element: <LearningSpacesPage />,
-  },
-  {
-    path: "/note-editor",
-    element: <NoteEditorPage />,
-  },
+  // Public
+  { path: "/", element: <Home /> },
+  { path: "/auth", element: <AuthPage /> },
+  { path: "/search", element: <SearchPage /> },
+  { path: "/learning-spaces", element: <LearningSpacesPage /> },
+  { path: "/ai-review-demo", element: <AIReviewNoteDemoPage /> },
+
+  // Protected
+  { path: "/roadmap", element: <ProtectedRoute><MyRoadmapsPage /></ProtectedRoute> },
+  { path: "/roadmap-result", element: <ProtectedRoute><RoadmapResultPage /></ProtectedRoute> },
+  { path: "/loading-roadmap", element: <ProtectedRoute><LoadingRoadmapPage /></ProtectedRoute> },
+  { path: "/dashboard", element: <ProtectedRoute><DashboardPage /></ProtectedRoute> },
+  { path: "/mypage", element: <ProtectedRoute><MyPage /></ProtectedRoute> },
+  { path: "/notifications", element: <ProtectedRoute><NotificationSettingsPage /></ProtectedRoute> },
+  { path: "/quiz", element: <ProtectedRoute><QuizPage /></ProtectedRoute> },
+  { path: "/note-editor", element: <ProtectedRoute><NoteEditorPage /></ProtectedRoute> },
 ]);
