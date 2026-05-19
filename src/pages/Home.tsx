@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
+import { useAuth } from "../context/AuthContext";
 import { generateRoadmap } from "../api/client";
 
 export default function Home() {
@@ -9,6 +10,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const suggestionChips = [
     "🎯 AI·데이터 입문",
@@ -19,11 +21,18 @@ export default function Home() {
 
   const handleGenerateRoadmap = async () => {
     if (!inputText.trim()) return;
+
+    if (!isAuthenticated) {
+      setError("로드맵 생성은 로그인 후 이용 가능합니다.");
+      navigate("/auth");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const roadmap = await generateRoadmap(inputText.trim());
-      navigate("/roadmap-result", { state: { roadmap } });
+      navigate("/loading-roadmap", { state: { roadmapId: roadmap.id } });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "로드맵 생성에 실패했습니다.";
       setError(message);

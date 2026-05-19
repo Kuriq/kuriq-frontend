@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import kuriLoading from "../assets/images/kuri-loading.png";
 
 export default function LoadingRoadmapPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [activeDot, setActiveDot] = useState(0);
 
@@ -31,17 +32,23 @@ export default function LoadingRoadmapPage() {
     return () => clearInterval(dotInterval);
   }, []);
 
-  // Simulate loading - navigate to roadmap result after 12 seconds
+  // Navigate to roadmap result with the roadmapId
   useEffect(() => {
+    const roadmapId = location.state?.roadmapId;
+    if (!roadmapId) {
+      navigate("/");
+      return;
+    }
+
     const timeout = setTimeout(() => {
-      navigate("/roadmap-result");
+      navigate("/roadmap-result", { state: { roadmapId } });
     }, 12000);
 
     return () => clearTimeout(timeout);
-  }, [navigate]);
+  }, [navigate, location.state]);
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center px-4"
       style={{ backgroundColor: '#F8F6F1' }}
     >
@@ -50,7 +57,7 @@ export default function LoadingRoadmapPage() {
         <div className="relative mb-8 md:mb-12">
           {/* Pulse rings */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div 
+            <div
               className="absolute rounded-full animate-pulse-ring"
               style={{
                 width: '140px',
@@ -59,7 +66,7 @@ export default function LoadingRoadmapPage() {
                 animation: 'pulseRing 2s ease-out infinite'
               }}
             />
-            <div 
+            <div
               className="absolute rounded-full animate-pulse-ring-delayed"
               style={{
                 width: '160px',
@@ -70,7 +77,6 @@ export default function LoadingRoadmapPage() {
             />
           </div>
 
-          {/* Quri SVG - Thinking Expression (Desktop: 120px, Mobile: 96px) */}
           <img
             src={kuriLoading}
             alt=""
@@ -81,10 +87,10 @@ export default function LoadingRoadmapPage() {
 
         {/* Loading Message - with fade transition */}
         <div className="h-16 md:h-20 flex items-center justify-center mb-3 md:mb-4">
-          <p 
+          <p
             key={currentMessageIndex}
             className="font-medium text-center px-4 animate-fadeInOut"
-            style={{ 
+            style={{
               color: '#2C2C2C',
               fontSize: 'clamp(15px, 4vw, 18px)',
               lineHeight: '1.5'
@@ -110,21 +116,12 @@ export default function LoadingRoadmapPage() {
         </div>
 
         {/* Timing Info */}
-        <p 
+        <p
           className="text-center text-[13px]"
           style={{ color: '#AAAAAA' }}
         >
           보통 10~15초 정도 걸려요
         </p>
-
-        {/* Debug button (remove in production) */}
-        <button
-          onClick={() => navigate("/roadmap")}
-          className="mt-8 px-4 py-2 rounded-lg text-xs opacity-30 hover:opacity-100 transition-opacity"
-          style={{ backgroundColor: '#E5E0D8', color: '#777777' }}
-        >
-          결과로 바로 가기 (테스트용)
-        </button>
       </div>
 
       {/* CSS Animations */}
