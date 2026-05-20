@@ -14,7 +14,6 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [platform, setPlatform] = useState("");
   const [category, setCategory] = useState("");
-  const [level, setLevel] = useState("");
   const [sortBy, setSortBy] = useState("최신순");
   
   const [results, setResults] = useState<CourseSearchResult["content"]>([]);
@@ -30,7 +29,6 @@ export default function SearchPage() {
         keyword: searchQuery || undefined,
         platform: platform || undefined,
         category: category || undefined,
-        difficulty: level || undefined,
         sort: sortMap[sortBy] || "latest",
         page: pageNum,
         size,
@@ -45,7 +43,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, platform, category, level, sortBy]);
+  }, [searchQuery, platform, category, sortBy]);
 
   const handleSearch = () => {
     setPage(0);
@@ -55,7 +53,6 @@ export default function SearchPage() {
   const handleResetFilters = () => {
     setPlatform("");
     setCategory("");
-    setLevel("");
     setSortBy("최신순");
   };
 
@@ -68,7 +65,6 @@ export default function SearchPage() {
   const activeFilters = [
     platform ? { label: platform, onRemove: () => setPlatform("") } : null,
     category ? { label: category, onRemove: () => setCategory("") } : null,
-    level ? { label: level, onRemove: () => setLevel("") } : null,
   ].filter(Boolean) as Array<{ label: string; onRemove: () => void }>;
 
   return (
@@ -97,12 +93,6 @@ export default function SearchPage() {
               options={["인문", "사회", "공학", "IT/SW", "자연과학", "교육", "예술", "의약학", "프로그래밍", "데이터 분석"]}
               value={category}
               onChange={setCategory}
-            />
-            <FilterDropdownButton
-              label="난이도"
-              options={["입문", "초급", "중급", "심화"]}
-              value={level}
-              onChange={setLevel}
             />
 
             <div className="flex-1" />
@@ -165,26 +155,11 @@ export default function SearchPage() {
 
           {/* Pagination */}
           {totalElements > size && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                disabled={page === 0}
-                onClick={() => fetchCourses(page - 1)}
-                className="px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-40"
-                style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
-              >
-                이전
-              </button>
-              <span className="px-3 py-1.5 text-sm font-medium" style={{ color: '#3B6B4A' }}>
-                {page + 1}
-              </span>
-              <button
-                onClick={() => fetchCourses(page + 1)}
-                className="px-3 py-1.5 rounded-lg text-sm border transition-colors"
-                style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
-              >
-                다음
-              </button>
-            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={Math.ceil(totalElements / size)}
+              onPageChange={fetchCourses}
+            />
           )}
         </div>
       </main>
@@ -358,18 +333,14 @@ function SearchResultCard({
   title,
   institution,
   platform,
-  difficulty,
-  estimatedHours,
-  durationWeeks,
+  category,
   url,
 }: {
   id: string;
   title: string;
   institution: string;
   platform: string;
-  difficulty: string;
-  estimatedHours: number;
-  durationWeeks: number;
+  category: string;
   url: string;
 }) {
   const platformColors: Record<string, string> = {
@@ -377,13 +348,6 @@ function SearchResultCard({
     KOCW: "bg-[#EBF5FB] text-[#3498DB]",
     온국민평생배움터: "bg-[#FFF3EB] text-[#E8985E]",
     서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
-  };
-
-  const levelColors: Record<string, string> = {
-    입문: "bg-[#FFF3EB] text-[#E8985E]",
-    초급: "bg-[#FFF3EB] text-[#E8985E]",
-    중급: "bg-[#FEF3E7] text-[#E67E22]",
-    심화: "bg-[#FFEBEE] text-[#E53935]",
   };
 
   return (
@@ -400,15 +364,8 @@ function SearchResultCard({
             >
               {platform}
             </span>
-            <span
-              className={`px-3 py-1 rounded-full text-[11px] font-[600] ${
-                levelColors[difficulty] || levelColors.입문
-              }`}
-            >
-              {difficulty}
-            </span>
-            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#EBF5FB] text-[#3498DB]">
-              {durationWeeks}주 · {estimatedHours}시간
+            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#F3E5F5] text-[#9C27B0]">
+              {category}
             </span>
           </div>
         </div>
@@ -421,6 +378,84 @@ function SearchResultCard({
           수강 신청 →
         </a>
       </div>
+    </div>
+  );
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 0; i < totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage < 3) {
+        for (let i = 0; i < maxVisible; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages - 1);
+      } else if (currentPage > totalPages - 4) {
+        pages.push(0);
+        pages.push("...");
+        for (let i = totalPages - maxVisible; i < totalPages; i++) pages.push(i);
+      } else {
+        pages.push(0);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages - 1);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 mt-8">
+      <button
+        disabled={currentPage === 0}
+        onClick={() => onPageChange(currentPage - 1)}
+        className="px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-40"
+        style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
+      >
+        이전
+      </button>
+
+      {getPageNumbers().map((page, idx) =>
+        typeof page === "string" ? (
+          <span key={idx} className="px-2 py-1.5 text-sm text-[#777777]">
+            {page}
+          </span>
+        ) : (
+          <button
+            key={idx}
+            onClick={() => onPageChange(page)}
+            className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+              page === currentPage
+                ? "bg-[#3B6B4A] border-[#3B6B4A] text-white font-[600]"
+                : "bg-white border-[#E5E0D8] text-[#777777] hover:border-[#3B6B4A]"
+            }`}
+          >
+            {page + 1}
+          </button>
+        )
+      )}
+
+      <button
+        disabled={currentPage === totalPages - 1}
+        onClick={() => onPageChange(currentPage + 1)}
+        className="px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-40"
+        style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
+      >
+        다음
+      </button>
     </div>
   );
 }

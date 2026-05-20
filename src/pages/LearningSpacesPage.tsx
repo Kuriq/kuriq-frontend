@@ -102,7 +102,7 @@ export default function LearningSpacesPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-      <Navigation activeMenu="대시보드" />
+      <Navigation activeMenu="장소추천" />
 
       <div className="flex-1 flex overflow-hidden">
         <div className="w-[40%] bg-[#F8F6F1] overflow-y-auto">

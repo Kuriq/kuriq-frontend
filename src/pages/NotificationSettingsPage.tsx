@@ -92,7 +92,7 @@ export default function NotificationSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-        <Navigation activeMenu="마이페이지" />
+        <Navigation activeMenu="알림 설정" />
         <main className="flex-1 px-8 py-12 flex items-center justify-center">
           <p className="text-[16px] text-[#777777]">설정을 불러오는 중...</p>
         </main>
@@ -102,7 +102,7 @@ export default function NotificationSettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-      <Navigation activeMenu="마이페이지" />
+      <Navigation activeMenu="알림 설정" />
 
       <main className="flex-1 px-8 py-12">
         <div className="max-w-[800px] mx-auto">

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import kuriLogo from "../../assets/images/kuri-logo.png";
+import { IoIosSettings } from "react-icons/io";
 
 interface NavigationProps {
   activeMenu?: string;
@@ -17,7 +18,7 @@ export function Navigation({ activeMenu = "홈" }: NavigationProps) {
     { label: "강좌 검색", path: "/search" },
     { label: "장소추천", path: "/learning-spaces" },
     { label: "마이페이지", path: "/mypage" },
-    { label: "알림 설정", path: "/notifications" },
+    { label: "알림 설정", path: "/notifications", icon: true },
   ];
 
   const handleLogout = async () => {
@@ -43,13 +44,13 @@ export function Navigation({ activeMenu = "홈" }: NavigationProps) {
             <Link
               key={item.label}
               to={item.path}
-              className={`px-4 py-2 rounded-full transition-colors ${
+              className={`px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 ${
                 item.label === activeMenu
                   ? "bg-[#E8F0EA] text-[#3B6B4A] font-[600]"
                   : "text-[#2C2C2C] font-[400] hover:bg-[#F8F6F1]"
               }`}
             >
-              {item.label}
+              {item.icon ? <IoIosSettings className="w-4 h-4" /> : item.label}
             </Link>
           ))}
 
