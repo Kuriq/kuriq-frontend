@@ -14,8 +14,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     credentials: "include",
   });
 
-  if (res.status === 401) {
-    // 토큰 만료 → refresh 시도
+  if (res.status === 401 || res.status === 403) {
+    // 토큰 만료 또는 인증 실패 → refresh 시도
     const refreshed = await refreshToken();
     if (!refreshed) throw new Error("UNAUTHORIZED");
     // 재시도
@@ -113,6 +113,7 @@ export async function searchCourses(params: {
   platform?: string;
   difficulty?: string;
   category?: string;
+  sort?: string;
   page?: number;
   size?: number;
 }) {
@@ -121,6 +122,7 @@ export async function searchCourses(params: {
   if (params.platform) qs.set("platform", params.platform);
   if (params.difficulty) qs.set("difficulty", params.difficulty);
   if (params.category) qs.set("category", params.category);
+  if (params.sort) qs.set("sort", params.sort);
   if (params.page !== undefined) qs.set("page", String(params.page));
   if (params.size !== undefined) qs.set("size", String(params.size));
   return request<CourseSearchResult>(`/api/v1/courses/search?${qs}`);
@@ -325,4 +327,208 @@ export async function activateRoadmap(roadmapId: string) {
 
 export async function deleteRoadmap(roadmapId: string) {
   return request<void>(`/api/v1/roadmap/${roadmapId}`, { method: "DELETE" });
+}
+
+// ── Quiz ──────────────────────────────────────────────
+
+export interface QuizQuestion {
+  questionId: string;
+  type: string; // "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER"
+  question: string;
+  options?: Array<{ id: string; text: string }>;
+}
+
+export interface QuizGenerateResponse {
+  quizSessionId: string;
+  courseId: string;
+  noteId: string;
+  questions: QuizQuestion[];
+}
+
+export async function generateQuiz(noteId: string, excludeSessionIds?: string[]) {
+  return request<QuizGenerateResponse>("/api/v1/quiz/generate", {
+    method: "POST",
+    body: JSON.stringify({ noteId, excludeSessionIds }),
+  });
+}
+
+export interface QuizAnswer {
+  questionId: string;
+  answer: string | boolean;
+}
+
+export interface QuizSubmitRequest {
+  answers: QuizAnswer[];
+}
+
+export interface QuizResult {
+  questionId: string;
+  type: string;
+  isCorrect: boolean;
+  result: string; // "CORRECT" | "PARTIAL" | "WRONG" | "GRADING_FAILED"
+  userAnswer: string | boolean;
+  correctAnswer: string | boolean;
+  explanation: string;
+  feedback: string;
+  noteReference: string;
+  weakTopic: string;
+}
+
+export interface QuizSubmitResponse {
+  quizSessionId: string;
+  totalQuestions: number;
+  correctCount: number;
+  scorePercent: number;
+  results: QuizResult[];
+  quriMessage: string;
+  weakTopics: string[];
+}
+
+export async function submitQuiz(quizSessionId: string, answers: QuizAnswer[]) {
+  return request<QuizSubmitResponse>(`/api/v1/quiz/${quizSessionId}/submit`, {
+    method: "POST",
+    body: JSON.stringify({ answers }),
+  });
+}
+
+export interface QuizHistoryItem {
+  quizSessionId: string;
+  courseId: string;
+  courseTitle: string;
+  totalQuestions: number;
+  correctCount: number;
+  scorePercent: number;
+  submittedAt: string | null;
+  createdAt: string;
+}
+
+export interface QuizHistoryResponse {
+  content: QuizHistoryItem[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export async function getQuizHistory(courseId?: string, page = 0, size = 10) {
+  const qs = new URLSearchParams();
+  if (courseId) qs.set("courseId", courseId);
+  qs.set("page", String(page));
+  qs.set("size", String(size));
+  return request<QuizHistoryResponse>(`/api/v1/quiz/history?${qs}`);
+}
+
+// ── Note Chat ─────────────────────────────────────────
+
+export interface ChatMessage {
+  chatId: string;
+  role: string; // "user" | "assistant"
+  message: string;
+  noteReferences?: string[];
+  timestamp: string;
+}
+
+export interface ChatHistoryResponse {
+  content: ChatMessage[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  size: number;
+  hasNext: boolean;
+}
+
+export async function getChatHistory(noteId: string, page = 0, size = 20) {
+  return request<ChatHistoryResponse>(
+    `/api/v1/notes/${noteId}/chat/history?page=${page}&size=${size}`
+  );
+}
+
+export interface ChatSendResponse {
+  chatId: string;
+  role: string;
+  message: string;
+  noteReferences?: string[];
+  timestamp: string;
+}
+
+export async function sendChatMessage(noteId: string, message: string) {
+  return request<ChatSendResponse>(`/api/v1/notes/${noteId}/chat`, {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
+
+export async function resetChatHistory(noteId: string) {
+  return request<{ message: string }>(`/api/v1/notes/${noteId}/chat/history`, {
+    method: "DELETE",
+  });
+}
+
+// ── Note ──────────────────────────────────────────────
+
+export interface NoteCreateRequest {
+  courseId: string;
+  content: string;
+}
+
+export interface NoteCreateResponse {
+  noteId: string;
+  courseId: string;
+  message: string;
+}
+
+export interface NoteDetail {
+  noteId: string;
+  courseId: string;
+  courseTitle: string;
+  platform: string;
+  content: string;
+  characterCount: number;
+  lastSavedAt: string;
+  createdAt: string;
+}
+
+export interface NoteSaveRequest {
+  content: string;
+}
+
+export interface NoteSaveResponse {
+  noteId: string;
+  message: string;
+  lastSavedAt: string;
+}
+
+export interface AiOrganizeResponse {
+  keywords: string[];
+  summary: string;
+  suggestions: string[];
+}
+
+export async function createNote(request: NoteCreateRequest) {
+  return request<NoteCreateResponse>("/api/v1/notes", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function getNoteByCourse(courseId: string) {
+  return request<NoteDetail>(`/api/v1/notes?courseId=${courseId}`);
+}
+
+export async function saveNote(noteId: string, request: NoteSaveRequest) {
+  return request<NoteSaveResponse>(`/api/v1/notes/${noteId}`, {
+    method: "PUT",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function aiOrganizeNote(noteId: string) {
+  return request<AiOrganizeResponse>(`/api/v1/notes/${noteId}/ai-organize`, {
+    method: "POST",
+  });
+}
+
+export async function deleteNote(noteId: string) {
+  return request<{ message: string }>(`/api/v1/notes/${noteId}`, {
+    method: "DELETE",
+  });
 }

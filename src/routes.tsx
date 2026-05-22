@@ -13,6 +13,7 @@ import QuizPage from "./pages/QuizPage";
 import LearningSpacesPage from "./pages/LearningSpacesPage";
 import NoteEditorPage from "./pages/NoteEditorPage";
 import LoadingRoadmapPage from "./pages/LoadingRoadmapPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 // ── Protected Route Wrapper ──────────────────────────
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -45,4 +46,7 @@ export const router = createBrowserRouter([
   { path: "/notifications", element: <ProtectedRoute><NotificationSettingsPage /></ProtectedRoute> },
   { path: "/quiz", element: <ProtectedRoute><QuizPage /></ProtectedRoute> },
   { path: "/note-editor", element: <ProtectedRoute><NoteEditorPage /></ProtectedRoute> },
+
+  // 404 Not Found (catch-all)
+  { path: "*", element: <NotFoundPage /> },
 ]);
