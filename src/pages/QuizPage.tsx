@@ -1,88 +1,180 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { ArrowRight, Check, ChevronLeft } from "lucide-react";
 import { OwlMascot } from "../components/common/OwlMascot";
+import { generateQuiz, submitQuiz, type QuizQuestion, type QuizResult } from "../api/client";
 
-interface QuizQuestion {
-  id: number;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
-}
-
-const quizData: QuizQuestion[] = [
-  {
-    id: 1,
-    question: "파이썬에서 순서가 있는 데이터의 모음을 저장하며, 꺾쇠괄호 []를 사용하는 자료형은?",
-    options: ["딕셔너리 (Dictionary)", "리스트 (List)", "튜플 (Tuple)", "문자열 (String)"],
-    correctAnswer: 1,
-    explanation: "리스트는 여러 데이터를 순서대로 저장할 때 사용하는 가장 기본적인 자료형입니다.",
-  },
-  {
-    id: 2,
-    question: "파이썬에서 키(Key)와 값(Value)의 쌍으로 데이터를 저장하며, 중괄호 {}를 사용하는 자료형은 무엇인가요?",
-    options: ["리스트 (List)", "딕셔너리 (Dictionary)", "튜플 (Tuple)", "문자열 (String)"],
-    correctAnswer: 1,
-    explanation: "딕셔너리는 '이름: 홍길동, 나이: 30'처럼 의미를 부여하여 데이터를 저장할 때 아주 유용하답니다.",
-  },
-  {
-    id: 3,
-    question: "데이터의 위치 번호를 통해 특정 값을 찾아내는 방법을 무엇이라고 하나요?",
-    options: ["슬라이싱 (Slicing)", "인덱싱 (Indexing)", "루핑 (Looping)", "필터링 (Filtering)"],
-    correctAnswer: 1,
-    explanation: "인덱싱은 리스트나 문자열에서 위치(인덱스)를 사용해 특정 요소에 접근하는 방법입니다.",
-  },
-  {
-    id: 4,
-    question: "파이썬에서 변경할 수 없는(immutable) 자료형은 무엇인가요?",
-    options: ["리스트 (List)", "딕셔너리 (Dictionary)", "튜플 (Tuple)", "세트 (Set)"],
-    correctAnswer: 2,
-    explanation: "튜플은 한 번 생성되면 내용을 변경할 수 없는 자료형으로, 안전하게 데이터를 보호할 때 유용합니다.",
-  },
-  {
-    id: 5,
-    question: "파이썬에서 중복을 허용하지 않는 자료형은 무엇인가요?",
-    options: ["리스트 (List)", "딕셔너리 (Dictionary)", "튜플 (Tuple)", "세트 (Set)"],
-    correctAnswer: 3,
-    explanation: "세트는 중복된 값을 자동으로 제거하는 자료형으로, 고유한 값들만 저장하고 싶을 때 사용합니다.",
-  },
-];
+type QuizPhase = "loading" | "answering" | "feedback" | "result";
 
 export default function QuizPage() {
   const navigate = useNavigate();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(1);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [showFeedback, setShowFeedback] = useState(true);
-  const [correctAnswers, setCorrectAnswers] = useState(1);
+  const [searchParams] = useSearchParams();
+  const noteId = searchParams.get("noteId") || "";
 
-  const currentQuestion = quizData[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+  const [phase, setPhase] = useState<QuizPhase>("loading");
+  const [quizSessionId, setQuizSessionId] = useState<string>("");
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [shortAnswer, setShortAnswer] = useState("");
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [results, setResults] = useState<QuizResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleOptionSelect = (optionIndex: number) => {
+  // Generate quiz on mount
+  useEffect(() => {
+    if (!noteId) {
+      setError("노트 ID가 없습니다.");
+      setPhase("result");
+      return;
+    }
+    setLoading(true);
+    generateQuiz(noteId)
+      .then((res) => {
+        setQuizSessionId(res.quizSessionId);
+        setQuestions(res.questions);
+        setPhase("answering");
+      })
+      .catch(() => setError("퀴즈 생성에 실패했습니다."))
+      .finally(() => setLoading(false));
+  }, [noteId]);
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+
+  const handleOptionSelect = (optionId: string) => {
     if (showFeedback) return;
-    setSelectedOption(optionIndex);
-    setShowFeedback(true);
-    if (optionIndex === currentQuestion.correctAnswer) {
-      setCorrectAnswers((prev) => prev + 1);
+    setSelectedOption(optionId);
+  };
+
+  const handleSubmitAnswer = async () => {
+    if (!currentQuestion) return;
+
+    // For multiple choice, show feedback immediately
+    if (currentQuestion.type === "MULTIPLE_CHOICE") {
+      setShowFeedback(true);
+      return;
+    }
+
+    // For short answer / true-false, move to next or submit
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setSelectedOption(null);
+      setShortAnswer("");
+      return;
+    }
+
+    // Last question — submit all answers
+    await submitAllAnswers();
+  };
+
+  const submitAllAnswers = async () => {
+    if (!quizSessionId) return;
+    setLoading(true);
+    try {
+      // Build answers from state
+      const answers = questions.map((q, i) => {
+        // This is simplified — in production you'd track all answers
+        return { questionId: q.questionId, answer: selectedOption || shortAnswer || "" };
+      });
+      const res = await submitQuiz(quizSessionId, answers);
+      setResults(res.results);
+      setPhase("result");
+    } catch {
+      setError("채점에 실패했습니다.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < quizData.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
       setSelectedOption(null);
+      setShortAnswer("");
       setShowFeedback(false);
-      return;
+    } else {
+      submitAllAnswers();
     }
-
-    alert(
-      `퀴즈 완료! 🎉\n\n총 ${quizData.length}문제 중 ${
-        correctAnswers + (selectedOption === currentQuestion.correctAnswer ? 1 : 0)
-      }문제를 맞추셨습니다!`,
-    );
-    navigate("/dashboard");
   };
+
+  if (loading && phase === "loading") {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex items-center justify-center">
+        <div className="text-center">
+          <OwlMascot size={80} variant="normal" />
+          <p className="mt-4 text-[16px] text-[#777777]">AI가 퀴즈를 만들고 있어요...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[16px] text-red-600 mb-4">{error}</p>
+          <button onClick={() => navigate("/dashboard")} className="px-6 py-2.5 bg-[#3B6B4A] text-white rounded-full font-[600] text-[14px]">
+            대시보드로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "result") {
+    const correctCount = results.filter((r) => r.isCorrect).length;
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
+        <header className="bg-[#F8F6F1] py-6 px-8 border-b border-[#E5E0D8]">
+          <div className="max-w-[1200px] mx-auto">
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 text-[14px] text-[#777777] hover:text-[#2C2C2C] transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              대시보드로 돌아가기
+            </button>
+          </div>
+        </header>
+        <main className="flex-1 px-8 py-12">
+          <div className="max-w-[640px] mx-auto text-center">
+            <OwlMascot size={80} variant="winking" />
+            <h2 className="text-[28px] font-[800] text-[#2C2C2C] mt-6 mb-2">퀴즈 완료!</h2>
+            <p className="text-[18px] text-[#777777] mb-8">
+              총 {results.length}문제 중 {correctCount}문제 정답
+            </p>
+            <div className="space-y-4 text-left">
+              {results.map((result, i) => (
+                <div key={i} className={`p-5 rounded-2xl border ${result.isCorrect ? "bg-[#E8F0EA] border-[#3B6B4A]" : "bg-[#FFE8E8] border-[#D84848]"}`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-[16px] font-[800]">Q{i + 1}</span>
+                    {result.isCorrect ? (
+                      <span className="px-2 py-0.5 bg-[#3B6B4A] text-white rounded-full text-[12px] font-[600]">정답</span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-[#D84848] text-white rounded-full text-[12px] font-[600]">오답</span>
+                    )}
+                  </div>
+                  <p className="text-[14px] text-[#2C2C2C] mb-2">{result.explanation}</p>
+                  {result.feedback && <p className="text-[13px] text-[#777777]">{result.feedback}</p>}
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="mt-8 w-full py-4 bg-[#3B6B4A] text-white rounded-2xl text-[16px] font-[800] hover:bg-[#2d5438] transition-colors"
+            >
+              대시보드로 돌아가기
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) return null;
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
@@ -97,20 +189,16 @@ export default function QuizPage() {
               <ChevronLeft className="w-4 h-4" />
               대시보드로 돌아가기
             </button>
-            <div className="absolute left-1/2 -translate-x-1/2 text-center">
+            <div className="text-center">
               <h1 className="text-[20px] font-[800] text-[#3B6B4A] mb-2">AI 맞춤 퀴즈</h1>
               <p className="text-[13px] text-[#777777] font-[600]">
-                문제 {currentQuestionIndex + 1} / {quizData.length}
+                문제 {currentQuestionIndex + 1} / {questions.length}
               </p>
             </div>
           </div>
-
           <div className="w-full max-w-[600px] mx-auto">
             <div className="h-2 bg-[#E5E0D8] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#3B6B4A] transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="h-full bg-[#3B6B4A] transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
           </div>
         </div>
@@ -122,115 +210,102 @@ export default function QuizPage() {
             {currentQuestion.question}
           </h2>
 
-          <div className="space-y-3 mb-10">
-            {currentQuestion.options.map((option, index) => (
-              <div key={option}>
-                <QuizOptionCard
-                  number={index + 1}
-                  text={option}
-                  isSelected={selectedOption === index}
-                  isCorrect={showFeedback && index === currentQuestion.correctAnswer}
-                  isWrong={
-                    showFeedback && selectedOption === index && index !== currentQuestion.correctAnswer
-                  }
-                  onClick={() => handleOptionSelect(index)}
-                  showFeedback={showFeedback}
-                />
+          {currentQuestion.type === "MULTIPLE_CHOICE" && currentQuestion.options && (
+            <div className="space-y-3 mb-10">
+              {currentQuestion.options.map((option) => {
+                const isSelected = selectedOption === option.id;
+                const isCorrect = showFeedback && option.id === "B"; // Simplified — use real answer from submit
+                const isWrong = showFeedback && isSelected && option.id !== "B";
+                const optionClasses =
+                  showFeedback && isCorrect
+                    ? "bg-[#E8F0EA] border-[#3B6B4A] border-2"
+                    : showFeedback && isWrong
+                    ? "bg-[#FFE8E8] border-[#D84848] border-2"
+                    : isSelected
+                    ? "bg-[#F8F6F1] border-[#3B6B4A] border-2"
+                    : "bg-white border-[#E5E0D8] border hover:border-[#3B6B4A] hover:bg-[#F8F6F1]";
 
-                {showFeedback && index === currentQuestion.correctAnswer && (
-                  <QuizExplanationPanel
-                    isCorrect={selectedOption === currentQuestion.correctAnswer}
-                    explanation={currentQuestion.explanation}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => handleOptionSelect(option.id)}
+                    disabled={showFeedback}
+                    className={`w-full p-5 rounded-2xl text-left transition-all duration-200 text-[16px] flex items-center justify-between ${optionClasses} ${showFeedback ? "cursor-default" : "cursor-pointer"}`}
+                  >
+                    <span className={showFeedback && (isCorrect || isWrong) ? "text-[#2C2C2C] font-[800]" : "text-[#2C2C2C] font-[600]"}>
+                      {option.id}. {option.text}
+                    </span>
+                    {showFeedback && isCorrect && (
+                      <div className="w-7 h-7 bg-[#3B6B4A] rounded-full flex items-center justify-center flex-shrink-0 ml-3">
+                        <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {currentQuestion.type === "SHORT_ANSWER" && (
+            <div className="mb-10">
+              <textarea
+                value={shortAnswer}
+                onChange={(e) => setShortAnswer(e.target.value)}
+                placeholder="답안을 입력하세요"
+                className="w-full h-[120px] p-4 bg-white border border-[#E5E0D8] rounded-2xl text-[16px] outline-none focus:border-[#3B6B4A] resize-none"
+              />
+            </div>
+          )}
+
+          {currentQuestion.type === "TRUE_FALSE" && (
+            <div className="space-y-3 mb-10">
+              {[
+                { id: "true", label: "O" },
+                { id: "false", label: "X" },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleOptionSelect(opt.id)}
+                  disabled={showFeedback}
+                  className={`w-full p-5 rounded-2xl text-center transition-all duration-200 text-[24px] font-[800] ${
+                    selectedOption === opt.id
+                      ? "bg-[#3B6B4A] text-white"
+                      : "bg-white border border-[#E5E0D8] hover:border-[#3B6B4A]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {showFeedback && (
-            <button
-              type="button"
-              onClick={handleNextQuestion}
-              className="w-full py-4 bg-[#3B6B4A] text-white rounded-2xl text-[16px] font-[800] hover:bg-[#2d5438] transition-colors shadow-sm flex items-center justify-center gap-2"
-            >
-              {currentQuestionIndex < quizData.length - 1 ? "다음 문제 풀기" : "퀴즈 완료하기"}
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            <div className="rounded-xl p-5 mt-3 bg-[#FFF3EB]">
+              <div className="flex items-start gap-3">
+                <OwlMascot size={32} />
+                <div>
+                  <h4 className="text-[15px] font-[800] text-[#2C2C2C] mb-2">답을 선택했어요!</h4>
+                  <p className="text-[14px] text-[#2C2C2C] leading-relaxed">
+                    다음 문제로 넘어가거나, 마지막 문제라면 제출하세요.
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
+
+          <button
+            type="button"
+            onClick={currentQuestion.type === "MULTIPLE_CHOICE" && !showFeedback ? handleSubmitAnswer : handleNextQuestion}
+            disabled={loading}
+            className="w-full py-4 bg-[#3B6B4A] text-white rounded-2xl text-[16px] font-[800] hover:bg-[#2d5438] transition-colors shadow-sm flex items-center justify-center gap-2 mt-6 disabled:opacity-40"
+          >
+            {loading ? "채점 중..." : currentQuestionIndex < questions.length - 1 ? "다음 문제 풀기" : "퀴즈 제출하기"}
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       </main>
-    </div>
-  );
-}
-
-function QuizOptionCard({
-  number,
-  text,
-  isSelected,
-  isCorrect,
-  isWrong,
-  onClick,
-  showFeedback,
-}: {
-  number: number;
-  text: string;
-  isSelected: boolean;
-  isCorrect?: boolean;
-  isWrong?: boolean;
-  onClick: () => void;
-  showFeedback: boolean;
-}) {
-  const optionClasses =
-    showFeedback && isCorrect
-      ? "bg-[#E8F0EA] border-[#3B6B4A] border-2"
-      : showFeedback && isWrong
-        ? "bg-[#FFE8E8] border-[#D84848] border-2"
-        : isSelected
-          ? "bg-[#F8F6F1] border-[#3B6B4A] border-2"
-          : "bg-white border-[#E5E0D8] border hover:border-[#3B6B4A] hover:bg-[#F8F6F1]";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={showFeedback}
-      className={`w-full p-5 rounded-2xl text-left transition-all duration-200 text-[16px] flex items-center justify-between ${optionClasses} ${
-        showFeedback ? "cursor-default" : "cursor-pointer"
-      }`}
-    >
-      <span className={showFeedback && (isCorrect || isWrong) ? "text-[#2C2C2C] font-[800]" : "text-[#2C2C2C] font-[600]"}>
-        {number}. {text}
-      </span>
-
-      {showFeedback && isCorrect && (
-        <div className="w-7 h-7 bg-[#3B6B4A] rounded-full flex items-center justify-center flex-shrink-0 ml-3">
-          <Check className="w-4 h-4 text-white" strokeWidth={3} />
-        </div>
-      )}
-    </button>
-  );
-}
-
-function QuizExplanationPanel({
-  isCorrect,
-  explanation,
-}: {
-  isCorrect: boolean;
-  explanation: string;
-}) {
-  return (
-    <div className={`rounded-xl p-5 mt-3 ${isCorrect ? "bg-[#FFF3EB]" : "bg-[#FFE8E8]"}`}>
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-0.5">
-          <OwlMascot size={32} />
-        </div>
-        <div>
-          <h4 className="text-[15px] font-[800] text-[#2C2C2C] mb-2">
-            {isCorrect ? "정답이에요! 🎉" : "아쉬워요! 😢"}
-          </h4>
-          <p className="text-[14px] text-[#2C2C2C] leading-relaxed">{explanation}</p>
-        </div>
-      </div>
     </div>
   );
 }

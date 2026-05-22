@@ -29,7 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (accessToken) {
       getProfile()
         .then(setUser)
-        .catch(() => setUser(null));
+        .catch(() => {
+          // 토큰이 유효하지 않으면 제거
+          localStorage.removeItem("accessToken");
+          setAccessToken(null);
+          setUser(null);
+        });
     }
   }, [accessToken]);
 

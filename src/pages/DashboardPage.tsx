@@ -1,34 +1,65 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router";
+import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getRoadmap, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
+import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
 import kuriWink from "../assets/images/kuri-wink.png";
 
 export default function DashboardPage() {
-  const location = useLocation();
+  const navigate = useNavigate();
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const roadmapId = location.state?.roadmapId;
-    if (roadmapId) {
-      getRoadmap(roadmapId)
-        .then((data) => {
+    let cancelled = false;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // 1. state로 전달받은 roadmapId 우선 사용
+        const stateRoadmapId = (window.history.state as any)?.usr?.roadmapId;
+        
+        let roadmapId: string | undefined = stateRoadmapId;
+
+        // 2. 없으면 활성 로드맵 조회
+        if (!roadmapId) {
+          const myRoadmaps = await getMyRoadmaps(0, 10);
+          const active = myRoadmaps.content.find((r) => r.isActive);
+          if (active) {
+            roadmapId = active.id;
+          }
+        }
+
+        if (!roadmapId) {
+          if (!cancelled) {
+            setError("활성화된 로드맵이 없습니다. 로드맵을 먼저 생성해주세요.");
+            setLoading(false);
+          }
+          return;
+        }
+
+        const data = await getRoadmap(roadmapId);
+        if (!cancelled) {
           setRoadmap(data);
-          // 현재 진행 주차로 초기화
           const idx = data.weeks.findIndex((w) => w.weekNumber === data.currentWeek);
           setCurrentWeekIndex(idx >= 0 ? idx : 0);
-        })
-        .catch(() => setError("로드맵을 불러오지 못했습니다."))
-        .finally(() => setLoading(false));
-    } else {
-      setError("활성화된 로드맵이 없습니다.");
-      setLoading(false);
-    }
-  }, [location.state]);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("로드맵을 불러오지 못했습니다.");
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+    return () => { cancelled = true; };
+  }, []);
 
   if (loading) {
     return (
@@ -46,12 +77,12 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
         <Navigation activeMenu="대시보드" />
         <main className="flex-1 px-8 py-12 flex flex-col items-center justify-center">
-          <p className="text-[16px] text-red-600 mb-4">{error || "활성화된 로드맵이 없습니다."}</p>
+          <p className="text-[16px] text-[#777777] mb-4">{error || "활성화된 로드맵이 없습니다."}</p>
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate("/")}
             className="px-6 py-2.5 bg-[#3B6B4A] text-white rounded-full font-[600] text-[14px]"
           >
-            돌아가기
+            홈으로 돌아가기
           </button>
         </main>
       </div>

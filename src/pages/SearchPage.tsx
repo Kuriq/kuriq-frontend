@@ -1,7 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
 import { searchCourses, type CourseSearchResult } from "../api/client";
+
+// 프론트 정렬 라벨 → 백엔드 정렬 파라매터 매핑
+const sortMap: Record<string, string> = {
+  "최신순": "latest",
+  "인기순": "latest", // 백엔드에 인기순 없으면 최신순으로 폴백
+  "강좌명순": "title",
+};
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,7 +23,7 @@ export default function SearchPage() {
   const [page, setPage] = useState(0);
   const size = 10;
 
-  const fetchCourses = async (pageNum = 0) => {
+  const fetchCourses = useCallback(async (pageNum = 0) => {
     setLoading(true);
     try {
       const res = await searchCourses({
@@ -24,6 +31,7 @@ export default function SearchPage() {
         platform: platform || undefined,
         category: category || undefined,
         difficulty: level || undefined,
+        sort: sortMap[sortBy] || "latest",
         page: pageNum,
         size,
       });
@@ -37,7 +45,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, platform, category, level, sortBy]);
 
   const handleSearch = () => {
     setPage(0);
@@ -51,8 +59,10 @@ export default function SearchPage() {
     setSortBy("최신순");
   };
 
+  // 초기 로딩 시 전체 강좌 조회
   useEffect(() => {
-    // 초기 로딩 시 빈 결과 또는 기본 검색
+    fetchCourses(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activeFilters = [
