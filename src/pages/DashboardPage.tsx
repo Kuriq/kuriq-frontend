@@ -93,6 +93,24 @@ export default function DashboardPage() {
   const prevWeek = currentWeekIndex > 0 ? roadmap.weeks[currentWeekIndex - 1] : null;
   const nextWeek = currentWeekIndex < roadmap.weeks.length - 1 ? roadmap.weeks[currentWeekIndex + 1] : null;
 
+  // currentWeek 가 없으면 에러 처리
+  if (!currentWeek) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
+        <Navigation activeMenu="대시보드" />
+        <main className="flex-1 px-8 py-12 flex flex-col items-center justify-center">
+          <p className="text-[16px] text-[#777777] mb-4">주차 정보를 불러올 수 없습니다.</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-2.5 bg-[#3B6B4A] text-white rounded-full font-[600] text-[14px]"
+          >
+            홈으로 돌아가기
+          </button>
+        </main>
+      </div>
+    );
+  }
+
   const weekStartDay = new Date();
   const weekEndDay = new Date();
   weekEndDay.setDate(weekEndDay.getDate() + 6);
