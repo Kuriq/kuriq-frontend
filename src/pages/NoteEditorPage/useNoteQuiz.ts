@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { generateQuiz, submitQuiz, type QuizQuestion, type QuizResult as QuizResponseType } from "../../api/client";
+import { useState, useCallback, useEffect } from "react";
+import { generateQuiz, submitQuiz, getNoteByCourse, type QuizQuestion, type QuizResult as QuizResponseType } from "../../api/client";
 
 interface QuizResult {
   totalQuestions: number;
@@ -31,7 +31,8 @@ interface UseNoteQuizReturn {
   setExpandedQuestion: (num: number | null) => void;
 }
 
-export function useNoteQuiz(noteId: string): UseNoteQuizReturn {
+export function useNoteQuiz(courseId: string): UseNoteQuizReturn {
+  const [noteId, setNoteId] = useState<string | null>(null);
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizLoading, setQuizLoading] = useState(false);
   const [quizSessionId, setQuizSessionId] = useState("");
@@ -41,6 +42,14 @@ export function useNoteQuiz(noteId: string): UseNoteQuizReturn {
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [showQuizResult, setShowQuizResult] = useState(false);
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
+
+  // Get noteId from courseId
+  useEffect(() => {
+    if (!courseId) return;
+    getNoteByCourse(courseId)
+      .then((note) => setNoteId(note.noteId))
+      .catch(() => {});
+  }, [courseId]);
 
   const handleStartQuiz = useCallback(async () => {
     if (!noteId) return;

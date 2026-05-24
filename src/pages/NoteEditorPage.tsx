@@ -15,7 +15,7 @@ import { QuizResultModal } from "./NoteEditorPage/components/QuizResultModal";
 export default function NoteEditorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const noteId = searchParams.get("noteId") || "";
+  const courseId = searchParams.get("courseId") || "";
 
   const [activeTab, setActiveTab] = useState<"organize" | "quiz" | "chat">("chat");
   const [showAIResult, setShowAIResult] = useState(false);
@@ -28,10 +28,12 @@ export default function NoteEditorPage() {
     characterCount,
     lastSavedAt,
     saving,
+    loading,
+    noteId,
     aiOrganizeResult,
     setNoteContent,
     handleAiOrganize,
-  } = useNote(noteId);
+  } = useNote(courseId);
 
   const {
     chatMessages,
@@ -40,7 +42,7 @@ export default function NoteEditorPage() {
     setChatInput,
     handleSendMessage,
     chatEndRef,
-  } = useNoteChat(noteId);
+  } = useNoteChat(courseId);
 
   const {
     quizStarted,
@@ -57,7 +59,7 @@ export default function NoteEditorPage() {
     handleSubmitQuiz,
     setShowQuizResult,
     setExpandedQuestion,
-  } = useNoteQuiz(noteId);
+  } = useNoteQuiz(courseId);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F8F6F1" }}>
@@ -76,8 +78,12 @@ export default function NoteEditorPage() {
           <span>대시보드</span>
         </button>
 
-        {/* Main Content: Split View */}
-        <div className="flex gap-4">
+        {loading ? (
+          <div className="flex items-center justify-center h-[600px]">
+            <p className="text-[16px] text-[#777777]">노트를 불러오는 중...</p>
+          </div>
+        ) : (
+          <div className="flex gap-4">
           {/* LEFT AREA - Note Editor (60%) */}
           <div className="flex-[6] flex flex-col gap-4">
             {/* Header Strip */}
@@ -110,7 +116,7 @@ export default function NoteEditorPage() {
             </div>
 
             {/* Editor Toolbar */}
-            <EditorToolbar onAiOrganize={handleAiOrganize} disabled={!noteId} />
+            <EditorToolbar onAiOrganize={handleAiOrganize} disabled={!noteId || loading} />
 
             {/* Main Editor Area */}
             <div className="bg-white rounded-xl p-6 border border-[#E5E0D8] min-h-[500px]">
@@ -210,7 +216,8 @@ export default function NoteEditorPage() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Quiz Result Modal */}

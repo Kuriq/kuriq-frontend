@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
+import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse } from "../api/client";
 import kuriWink from "../assets/images/kuri-wink.png";
 
 export default function DashboardPage() {
@@ -310,20 +310,30 @@ export default function DashboardPage() {
 }
 
 function CourseCard({ item }: { item: RoadmapItem }) {
+  const navigate = useNavigate();
   const { course, isCompleted } = item;
+  const [loading, setLoading] = useState(false);
+
+  const handleNoteClick = async () => {
+    setLoading(true);
+    try {
+      const note = await getNoteByCourse(course.id);
+      // 노트 존재하면 courseId 로 이동 (에디터에서 로드)
+      navigate(`/note-editor?courseId=${course.id}`);
+    } catch (err) {
+      console.log("노트 조회 실패:", err);
+      // 404 = 노트 없음 → courseId 로 이동 (에디터에서 자동 생성)
+      navigate(`/note-editor?courseId=${course.id}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const platformColors: Record<string, string> = {
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
     KOCW: "bg-[#E3F2FD] text-[#1976D2]",
     온국민평생배움터: "bg-[#FFE8D6] text-[#A05A2C]",
     서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
-  };
-
-  const levelColors: Record<string, string> = {
-    입문: "bg-[#E8F0EA] text-[#3B6B4A]",
-    초급: "bg-[#FFF9C4] text-[#827717]",
-    중급: "bg-[#FEF3E7] text-[#E67E22]",
-    심화: "bg-[#FDE8E8] text-[#C0392B]",
   };
 
   return (
@@ -334,8 +344,10 @@ function CourseCard({ item }: { item: RoadmapItem }) {
         border: `1px solid ${isCompleted ? '#C8E0D0' : '#E5E0D8'}`
       }}
     >
-      <div
-        className="flex-shrink-0 w-[22px] h-[22px] rounded flex items-center justify-center"
+      <button
+        type="button"
+        onClick={() => {}}
+        className="flex-shrink-0 w-[22px] h-[22px] rounded flex items-center justify-center transition-colors"
         style={{ backgroundColor: isCompleted ? '#3B6B4A' : 'transparent', border: isCompleted ? 'none' : '2px solid #E5E0D8' }}
       >
         {isCompleted && (
@@ -343,7 +355,7 @@ function CourseCard({ item }: { item: RoadmapItem }) {
             <path d="M2 7L5.5 10.5L12 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         )}
-      </div>
+      </button>
 
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
@@ -360,13 +372,23 @@ function CourseCard({ item }: { item: RoadmapItem }) {
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${platformColors[course.platform] || platformColors["K-MOOC"]}`}>
             {course.platform}
           </span>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[course.difficulty] || levelColors.입문}`}>
-            {course.difficulty}
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3E5F5] text-[#9C27B0]">
+            {course.category}
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          disabled={loading}
+          onClick={handleNoteClick}
+          className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50"
+          style={{ borderColor: '#777777', color: '#777777', backgroundColor: 'transparent' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8F6F1'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          {loading ? "로딩 중..." : "📝 노트 보기"}
+        </button>
         {!isCompleted && (
           <a
             href={course.url}

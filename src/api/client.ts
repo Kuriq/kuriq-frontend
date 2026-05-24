@@ -503,10 +503,10 @@ export interface AiOrganizeResponse {
   suggestions: string[];
 }
 
-export async function createNote(request: NoteCreateRequest) {
+export async function createNote(data: NoteCreateRequest) {
   return request<NoteCreateResponse>("/api/v1/notes", {
     method: "POST",
-    body: JSON.stringify(request),
+    body: JSON.stringify(data),
   });
 }
 
@@ -514,10 +514,10 @@ export async function getNoteByCourse(courseId: string) {
   return request<NoteDetail>(`/api/v1/notes?courseId=${courseId}`);
 }
 
-export async function saveNote(noteId: string, request: NoteSaveRequest) {
+export async function saveNote(noteId: string, data: NoteSaveRequest) {
   return request<NoteSaveResponse>(`/api/v1/notes/${noteId}`, {
     method: "PUT",
-    body: JSON.stringify(request),
+    body: JSON.stringify(data),
   });
 }
 

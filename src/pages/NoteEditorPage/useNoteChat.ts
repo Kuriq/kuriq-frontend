@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getChatHistory, sendChatMessage, type ChatMessage } from "../../api/client";
+import { getChatHistory, sendChatMessage, getNoteByCourse, type ChatMessage } from "../../api/client";
 
 interface UseNoteChatReturn {
   chatMessages: ChatMessage[];
@@ -10,11 +10,20 @@ interface UseNoteChatReturn {
   chatEndRef: React.RefObject<HTMLDivElement>;
 }
 
-export function useNoteChat(noteId: string): UseNoteChatReturn {
+export function useNoteChat(courseId: string): UseNoteChatReturn {
+  const [noteId, setNoteId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Get noteId from courseId
+  useEffect(() => {
+    if (!courseId) return;
+    getNoteByCourse(courseId)
+      .then((note) => setNoteId(note.noteId))
+      .catch(() => {});
+  }, [courseId]);
 
   // Load chat history on mount
   useEffect(() => {
