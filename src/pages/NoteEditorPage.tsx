@@ -18,12 +18,12 @@ export default function NoteEditorPage() {
   const courseId = searchParams.get("courseId") || "";
 
   const [activeTab, setActiveTab] = useState<"organize" | "quiz" | "chat">("chat");
-  const [showAIResult, setShowAIResult] = useState(false);
 
   // Custom hooks
   const {
     noteContent,
     courseTitle,
+    courseCategory,
     platform,
     characterCount,
     lastSavedAt,
@@ -31,8 +31,11 @@ export default function NoteEditorPage() {
     loading,
     noteId,
     aiOrganizeResult,
+    showOrganizeResult,
     setNoteContent,
     handleAiOrganize,
+    handleManualSave,
+    addContentToNote,
   } = useNote(courseId);
 
   const {
@@ -105,13 +108,34 @@ export default function NoteEditorPage() {
                 <span className="text-[11px]" style={{ color: "#AAAAAA" }}>
                   {characterCount}자
                 </span>
-                <span className="text-[11px]" style={{ color: "#AAAAAA" }}>
-                  {saving
-                    ? "💾 저장 중..."
-                    : lastSavedAt
-                    ? `💾 자동 저장됨 · ${new Date(lastSavedAt).toLocaleTimeString()}`
-                    : "💾 자동 저장됨"}
-                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleManualSave}
+                    disabled={!noteId || saving || !noteContent}
+                    className="px-3 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
+                    style={{
+                      backgroundColor: saving || !noteContent ? "#E5E0D8" : "#3B6B4A",
+                      color: "#FFFFFF",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!saving && noteContent) {
+                        e.currentTarget.style.backgroundColor = "#2D553A";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!saving && noteContent) {
+                        e.currentTarget.style.backgroundColor = "#3B6B4A";
+                      }
+                    }}
+                  >
+                    {saving ? "💾 저장 중..." : "💾 저장하기"}
+                  </button>
+                  <span className="text-[11px]" style={{ color: "#AAAAAA" }}>
+                    {lastSavedAt
+                      ? `자동 저장됨 · ${new Date(lastSavedAt).toLocaleTimeString()}`
+                      : "저장되지 않음"}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -181,14 +205,21 @@ export default function NoteEditorPage() {
               {/* Tab Content */}
               <div className="p-6">
                 {activeTab === "organize" && (
-                  <OrganizeTab
-                    aiOrganizeResult={aiOrganizeResult}
-                    showAIResult={showAIResult}
-                    onAiOrganize={() => {
-                      handleAiOrganize();
-                      setShowAIResult(true);
-                    }}
-                  />
+                  <div className="max-h-[500px] overflow-y-auto">
+                    <OrganizeTab
+                      aiOrganizeResult={aiOrganizeResult}
+                      showAIResult={showOrganizeResult}
+                      onAiOrganize={handleAiOrganize}
+                      onAddSummaryLine={(line: string) => {
+                        if (line.trim()) {
+                          addContentToNote(line);
+                        }
+                      }}
+                      onAddSuggestion={(suggestion: string) => {
+                        addContentToNote(suggestion);
+                      }}
+                    />
+                  </div>
                 )}
                 {activeTab === "quiz" && (
                   <QuizTab

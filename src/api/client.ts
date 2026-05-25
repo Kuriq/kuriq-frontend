@@ -499,7 +499,7 @@ export interface NoteSaveResponse {
 
 export interface AiOrganizeResponse {
   keywords: string[];
-  summary: string;
+  structuredSummary: string;
   suggestions: string[];
 }
 
@@ -521,9 +521,10 @@ export async function saveNote(noteId: string, data: NoteSaveRequest) {
   });
 }
 
-export async function aiOrganizeNote(noteId: string) {
+export async function aiOrganizeNote(noteId: string, courseCategory: string) {
   return request<AiOrganizeResponse>(`/api/v1/notes/${noteId}/ai-organize`, {
     method: "POST",
+    body: JSON.stringify({ courseCategory }),
   });
 }
 

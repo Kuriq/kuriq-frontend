@@ -4,26 +4,33 @@ import { getNoteByCourse, saveNote, aiOrganizeNote, createNote, type AiOrganizeR
 interface UseNoteReturn {
   noteContent: string;
   courseTitle: string;
+  courseCategory: string;
   platform: string;
   characterCount: number;
   lastSavedAt: string | null;
   saving: boolean;
   loading: boolean;
   aiOrganizeResult: AiOrganizeResponse | null;
+  showOrganizeResult: boolean;
+  setShowOrganizeResult: (show: boolean) => void;
   noteId: string | null;
   setNoteContent: (content: string) => void;
   handleAiOrganize: () => Promise<void>;
+  handleManualSave: () => Promise<void>;
+  addContentToNote: (content: string) => void;
 }
 
 export function useNote(courseId: string): UseNoteReturn {
   const [noteId, setNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
   const [courseTitle, setCourseTitle] = useState("");
+  const [courseCategory, setCourseCategory] = useState("");
   const [platform, setPlatform] = useState("");
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [aiOrganizeResult, setAiOrganizeResult] = useState<AiOrganizeResponse | null>(null);
+  const [showOrganizeResult, setShowOrganizeResult] = useState(false);
 
   // Load or create note on mount
   useEffect(() => {
@@ -35,6 +42,7 @@ export function useNote(courseId: string): UseNoteReturn {
         setNoteId(note.noteId);
         setNoteContent(note.content);
         setCourseTitle(note.courseTitle);
+        setCourseCategory(note.courseCategory || "기타");
         setPlatform(note.platform);
         setLastSavedAt(note.lastSavedAt);
       })
@@ -46,6 +54,7 @@ export function useNote(courseId: string): UseNoteReturn {
           setNoteId(created.noteId);
           setNoteContent("");
           setCourseTitle("");
+          setCourseCategory("");
           setPlatform("");
           setLastSavedAt(null);
           // URL 업데이트
@@ -56,6 +65,22 @@ export function useNote(courseId: string): UseNoteReturn {
       })
       .finally(() => setLoading(false));
   }, [courseId]);
+
+  // Manual save function
+  const handleManualSave = useCallback(async () => {
+    if (!noteId || !noteContent) return;
+    setSaving(true);
+    try {
+      const res = await saveNote(noteId, { content: noteContent });
+      setLastSavedAt(res.lastSavedAt);
+      return true;
+    } catch (err) {
+      console.error("노트 저장 실패:", err);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, [noteId, noteContent]);
 
   // Auto-save note (debounce 3s)
   useEffect(() => {
@@ -76,6 +101,14 @@ export function useNote(courseId: string): UseNoteReturn {
     return () => clearTimeout(timer);
   }, [noteContent, noteId]);
 
+  // Add content to note
+  const addContentToNote = useCallback((content: string) => {
+    setNoteContent((prev) => {
+      const newContent = prev.trim() ? `${prev}\n\n${content}` : content;
+      return newContent;
+    });
+  }, []);
+
   const handleAiOrganize = useCallback(async () => {
     if (!noteId) return;
     if (noteContent.length < 50) {
@@ -83,17 +116,19 @@ export function useNote(courseId: string): UseNoteReturn {
       return;
     }
     try {
-      const res = await aiOrganizeNote(noteId);
+      const res = await aiOrganizeNote(noteId, courseCategory || "기타");
       setAiOrganizeResult(res);
+      setShowOrganizeResult(true);
     } catch (err) {
       console.error("AI 노트 정리 실패:", err);
       alert("AI 노트 정리에 실패했습니다.");
     }
-  }, [noteId, noteContent]);
+  }, [noteId, noteContent, courseCategory]);
 
   return {
     noteContent,
     courseTitle,
+    courseCategory,
     platform,
     characterCount: noteContent.length,
     lastSavedAt,
@@ -101,7 +136,11 @@ export function useNote(courseId: string): UseNoteReturn {
     loading,
     noteId,
     aiOrganizeResult,
+    showOrganizeResult,
+    setShowOrganizeResult,
     setNoteContent,
     handleAiOrganize,
+    handleManualSave,
+    addContentToNote,
   };
 }

@@ -1,14 +1,20 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import { type AiOrganizeResponse } from "../../../api/client";
 
 interface OrganizeTabProps {
   aiOrganizeResult: AiOrganizeResponse | null;
-  showAIResult: boolean;
   onAiOrganize: () => void;
+  onAddSummaryLine?: (line: string) => void;
+  onAddSuggestion?: (suggestion: string) => void;
 }
 
-export function OrganizeTab({ aiOrganizeResult, showAIResult, onAiOrganize }: OrganizeTabProps) {
+export function OrganizeTab({ 
+  aiOrganizeResult, 
+  onAiOrganize,
+  onAddSummaryLine,
+  onAddSuggestion 
+}: OrganizeTabProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* Generate Button */}
@@ -24,7 +30,7 @@ export function OrganizeTab({ aiOrganizeResult, showAIResult, onAiOrganize }: Or
       </button>
 
       {/* AI Result */}
-      {showAIResult && aiOrganizeResult && (
+      {aiOrganizeResult && (
         <div className="flex flex-col gap-6">
           {/* Section 1: Keywords */}
           <div>
@@ -53,9 +59,7 @@ export function OrganizeTab({ aiOrganizeResult, showAIResult, onAiOrganize }: Or
               className="rounded-lg p-4 space-y-2"
               style={{ backgroundColor: "#F8F6F1" }}
             >
-              {aiOrganizeResult.summary.split("\n").map((line, i) => (
-                <SummaryLine key={i} text={line} />
-              ))}
+              <MarkdownRenderer content={aiOrganizeResult.structuredSummary} onAddLine={onAddSummaryLine} />
             </div>
           </div>
 
@@ -71,17 +75,20 @@ export function OrganizeTab({ aiOrganizeResult, showAIResult, onAiOrganize }: Or
                   className="rounded-lg p-4 group relative"
                   style={{ backgroundColor: "#FFF3EB" }}
                 >
-                  <p className="text-sm leading-relaxed pr-2" style={{ color: "#2C2C2C" }}>
+                  <p className="text-sm leading-relaxed pr-8" style={{ color: "#2C2C2C" }}>
                     {suggestion}
                   </p>
-                  <button
-                    className="mt-2 text-xs font-medium transition-colors"
-                    style={{ color: "#E8985E" }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = "#D17A42"}
-                    onMouseLeave={(e) => e.currentTarget.style.color = "#E8985E"}
-                  >
-                    + 노트에 추가
-                  </button>
+                  {onAddSuggestion && (
+                    <button
+                      onClick={() => onAddSuggestion(suggestion)}
+                      className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                      style={{ color: "#E8985E" }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#FFE5CC"}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    >
+                      <Plus size={16} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -97,31 +104,137 @@ export function OrganizeTab({ aiOrganizeResult, showAIResult, onAiOrganize }: Or
   );
 }
 
-// Helper component for summary lines with hover add button
-function SummaryLine({ text }: { text: string }) {
-  const [isHovered, setIsHovered] = useState(false);
-
+// Markdown renderer component with hover add button
+function MarkdownRenderer({ content, onAddLine }: { content: string; onAddLine?: (line: string) => void }) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const lines = content.split("\n");
+  
   return (
-    <div
-      className="relative group"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm leading-relaxed flex-1" style={{ color: "#2C2C2C" }}>
-          {text}
-        </p>
-        {isHovered && (
-          <button
-            className="text-xs font-medium whitespace-nowrap transition-colors"
-            style={{ color: "#3B6B4A" }}
-            onMouseEnter={(e) => e.currentTarget.style.color = "#2A4D34"}
-            onMouseLeave={(e) => e.currentTarget.style.color = "#3B6B4A"}
+    <div className="space-y-2">
+      {lines.map((line, i) => {
+        // Header (###)
+        if (line.startsWith("###")) {
+          return (
+            <div
+              key={i}
+              className="relative group"
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <h4 className="font-bold" style={{ color: "#2C2C2C", fontSize: "13px" }}>
+                  {line.replace(/^###\s*/, "")}
+                </h4>
+                {onAddLine && hoveredIndex === i && (
+                  <button
+                    onClick={() => onAddLine(line)}
+                    className="text-xs font-medium whitespace-nowrap transition-colors"
+                    style={{ color: "#3B6B4A" }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#2A4D34"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "#3B6B4A"}
+                  >
+                    + 노트에 추가
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        }
+        // Bold list item (- **text**: description)
+        if (line.startsWith("- **")) {
+          const match = line.match(/^- \*\*(.+?)\*\*(.*)$/);
+          return (
+            <div
+              key={i}
+              className="relative group"
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-xs" style={{ color: "#3B6B4A" }}>•</span>
+                  <p className="text-sm" style={{ color: "#2C2C2C" }}>
+                    <strong>{match?.[1]}</strong>
+                    {match?.[2]?.replace(/^[:\s]+/, "")}
+                  </p>
+                </div>
+                {onAddLine && hoveredIndex === i && (
+                  <button
+                    onClick={() => onAddLine(line)}
+                    className="text-xs font-medium whitespace-nowrap transition-colors"
+                    style={{ color: "#3B6B4A" }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#2A4D34"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "#3B6B4A"}
+                  >
+                    + 노트에 추가
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        }
+        // Regular list item (- text)
+        if (line.startsWith("- ")) {
+          return (
+            <div
+              key={i}
+              className="relative group"
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-xs" style={{ color: "#3B6B4A" }}>•</span>
+                  <p className="text-sm" style={{ color: "#2C2C2C" }}>
+                    {line.substring(2)}
+                  </p>
+                </div>
+                {onAddLine && hoveredIndex === i && (
+                  <button
+                    onClick={() => onAddLine(line)}
+                    className="text-xs font-medium whitespace-nowrap transition-colors"
+                    style={{ color: "#3B6B4A" }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#2A4D34"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "#3B6B4A"}
+                  >
+                    + 노트에 추가
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        }
+        // Empty line
+        if (line.trim() === "") {
+          return <div key={i} className="h-2" />;
+        }
+        // Regular text
+        return (
+          <div
+            key={i}
+            className="relative group"
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
-            + 노트에 추가
-          </button>
-        )}
-      </div>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm" style={{ color: "#2C2C2C" }}>
+                {line}
+              </p>
+              {onAddLine && hoveredIndex === i && (
+                <button
+                  onClick={() => onAddLine(line)}
+                  className="text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{ color: "#3B6B4A" }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = "#2A4D34"}
+                  onMouseLeave={(e) => e.currentTarget.style.color = "#3B6B4A"}
+                >
+                  + 노트에 추가
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
