@@ -9,6 +9,7 @@ interface QuizTabProps {
   quizResult: { totalQuestions: number; correctCount: number; scorePercent: number } | null;
   handleStartQuiz: () => void;
   handleSelectAnswer: (optionId: string) => void;
+  handleNextQuestion: () => void;
   handleSubmitQuiz: () => void;
 }
 
@@ -21,6 +22,7 @@ export function QuizTab({
   quizResult,
   handleStartQuiz,
   handleSelectAnswer,
+  handleNextQuestion,
   handleSubmitQuiz,
 }: QuizTabProps) {
   if (!quizStarted) {
@@ -55,13 +57,22 @@ export function QuizTab({
         <p className="text-sm mb-4" style={{ color: "#777777" }}>
           {quizResult.totalQuestions}문제 중 {quizResult.correctCount}문제 정답 ({quizResult.scorePercent}%)
         </p>
-        <button
-          onClick={handleSubmitQuiz}
-          className="w-full h-11 rounded-lg font-medium text-sm"
-          style={{ backgroundColor: "#3B6B4A", color: "white" }}
-        >
-          결과 상세 보기
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={handleStartQuiz}
+            className="w-full h-11 rounded-lg font-medium text-sm"
+            style={{ backgroundColor: "#3B6B4A", color: "white" }}
+          >
+            🔄 다시 풀기
+          </button>
+          <button
+            onClick={handleSubmitQuiz}
+            className="w-full h-11 rounded-lg font-medium text-sm"
+            style={{ backgroundColor: "white", color: "#3B6B4A", border: "1px solid #3B6B4A" }}
+          >
+            결과 상세 보기
+          </button>
+        </div>
       </div>
     );
   }
@@ -142,13 +153,73 @@ export function QuizTab({
             })}
           </div>
         )}
+
+        {question.type === "TRUE_FALSE" && (
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => handleSelectAnswer("true")}
+              className="w-full min-h-[48px] px-4 py-3 rounded-lg text-left text-sm transition-all flex items-center justify-between gap-2"
+              style={{
+                backgroundColor: quizAnswers[currentQuestion] === "true" ? "#F8F6F1" : "white",
+                border: `1px solid ${quizAnswers[currentQuestion] === "true" ? "#3B6B4A" : "#E5E0D8"}`,
+                color: "#2C2C2C",
+              }}
+            >
+              <span>
+                <strong>O.</strong> 참
+              </span>
+              {quizAnswers[currentQuestion] === "true" && (
+                <span className="text-sm font-bold whitespace-nowrap" style={{ color: "#3B6B4A" }}>
+                  ✓ 선택
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => handleSelectAnswer("false")}
+              className="w-full min-h-[48px] px-4 py-3 rounded-lg text-left text-sm transition-all flex items-center justify-between gap-2"
+              style={{
+                backgroundColor: quizAnswers[currentQuestion] === "false" ? "#F8F6F1" : "white",
+                border: `1px solid ${quizAnswers[currentQuestion] === "false" ? "#3B6B4A" : "#E5E0D8"}`,
+                color: "#2C2C2C",
+              }}
+            >
+              <span>
+                <strong>X.</strong> 거짓
+              </span>
+              {quizAnswers[currentQuestion] === "false" && (
+                <span className="text-sm font-bold whitespace-nowrap" style={{ color: "#3B6B4A" }}>
+                  ✓ 선택
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {question.type === "SHORT_ANSWER" && (
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              value={quizAnswers[currentQuestion] || ""}
+              onChange={(e) => handleSelectAnswer(e.target.value)}
+              placeholder="정답을 입력하세요"
+              className="w-full px-4 py-3 rounded-lg text-sm border outline-none transition-all"
+              style={{
+                borderColor: quizAnswers[currentQuestion] ? "#3B6B4A" : "#E5E0D8",
+                backgroundColor: "#F8F6F1",
+                color: "#2C2C2C",
+              }}
+              onFocus={(e) => (e.currentTarget.style.backgroundColor = "white")}
+              onBlur={(e) => (e.currentTarget.style.backgroundColor = "#F8F6F1")}
+            />
+          </div>
+        )}
       </div>
 
       {/* Next / Submit Button */}
       <button
         onClick={() => {
           if (currentQuestion < quizQuestions.length - 1) {
-            // 다음 문제 (실제로는 useNoteQuiz 에서 처리)
+            handleNextQuestion();
           } else {
             handleSubmitQuiz();
           }

@@ -27,6 +27,7 @@ interface UseNoteQuizReturn {
   handleStartQuiz: () => Promise<void>;
   handleSelectAnswer: (optionId: string) => void;
   handleSubmitQuiz: () => Promise<void>;
+  handleNextQuestion: () => void;
   setShowQuizResult: (show: boolean) => void;
   setExpandedQuestion: (num: number | null) => void;
 }
@@ -62,16 +63,23 @@ export function useNoteQuiz(courseId: string): UseNoteQuizReturn {
       setCurrentQuestion(0);
       setQuizAnswers({});
       setQuizResult(null);
+      setShowQuizResult(false);
     } catch {
       alert("퀴즈 생성에 실패했습니다.");
     } finally {
       setQuizLoading(false);
     }
-  }, [noteId]);
+  }, [noteId, setShowQuizResult]);
 
   const handleSelectAnswer = useCallback((optionId: string) => {
     setQuizAnswers((prev) => ({ ...prev, [currentQuestion]: optionId }));
   }, [currentQuestion]);
+
+  const handleNextQuestion = useCallback(() => {
+    if (currentQuestion < quizQuestions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
+    }
+  }, [currentQuestion, quizQuestions.length]);
 
   const handleSubmitQuiz = useCallback(async () => {
     if (!quizSessionId) return;
@@ -108,6 +116,7 @@ export function useNoteQuiz(courseId: string): UseNoteQuizReturn {
     expandedQuestion,
     handleStartQuiz,
     handleSelectAnswer,
+    handleNextQuestion,
     handleSubmitQuiz,
     setShowQuizResult,
     setExpandedQuestion,

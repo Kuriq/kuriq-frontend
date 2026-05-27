@@ -59,6 +59,7 @@ export default function NoteEditorPage() {
     expandedQuestion,
     handleStartQuiz,
     handleSelectAnswer,
+    handleNextQuestion,
     handleSubmitQuiz,
     setShowQuizResult,
     setExpandedQuestion,
@@ -231,6 +232,7 @@ export default function NoteEditorPage() {
                     quizResult={quizResult}
                     handleStartQuiz={handleStartQuiz}
                     handleSelectAnswer={handleSelectAnswer}
+                    handleNextQuestion={handleNextQuestion}
                     handleSubmitQuiz={handleSubmitQuiz}
                   />
                 )}
