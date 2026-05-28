@@ -203,11 +203,6 @@ export default function NoteEditorPage() {
                       ? `자동 저장됨 · ${new Date(lastSavedAt).toLocaleTimeString()}`
                       : "저장되지 않음"}
                   </span>
-                  <span className="text-[11px]" style={{ color: "#AAAAAA" }}>
-                    {lastSavedAt
-                      ? `자동 저장됨 · ${new Date(lastSavedAt).toLocaleTimeString()}`
-                      : "저장되지 않음"}
-                  </span>
                 </div>
               </div>
             </div>
