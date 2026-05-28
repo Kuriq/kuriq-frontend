@@ -19,7 +19,7 @@ export default function NoteEditorPage() {
   const courseId = searchParams.get("courseId") || "";
 
   const [activeTab, setActiveTab] = useState<"organize" | "quiz" | "chat">("chat");
-  const [editMode, setEditMode] = useState(true); // 편집 모드 vs 미리보기 모드
+  const [editMode, setEditMode] = useState(false); // false=미리보기 (기본), true=편집
 
   // Custom hooks
   const {
@@ -203,6 +203,11 @@ export default function NoteEditorPage() {
                       ? `자동 저장됨 · ${new Date(lastSavedAt).toLocaleTimeString()}`
                       : "저장되지 않음"}
                   </span>
+                  <span className="text-[11px]" style={{ color: "#AAAAAA" }}>
+                    {lastSavedAt
+                      ? `자동 저장됨 · ${new Date(lastSavedAt).toLocaleTimeString()}`
+                      : "저장되지 않음"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -220,91 +225,109 @@ export default function NoteEditorPage() {
 
             {/* Main Editor Area */}
             <div className="bg-white rounded-xl p-6 border border-[#E5E0D8] min-h-[500px]">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
+              {editMode ? (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditMode(false)}
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-[#3B6B4A] text-white"
+                      >
+                        ✓ 완료
+                      </button>
+                      <span className="text-xs text-[#777777]">
+                        ESC 키로도 완료할 수 있어요
+                      </span>
+                    </div>
+                  </div>
+                  <textarea
+                    value={noteContent}
+                    onChange={(e) => setNoteContent(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setEditMode(false);
+                      }
+                    }}
+                    autoFocus
+                    className="w-full h-full min-h-[480px] resize-none outline-none font-normal leading-relaxed"
+                    style={{
+                      color: "#2C2C2C",
+                      fontSize: "14px",
+                      lineHeight: "1.8",
+                      fontFamily: 'Pretendard, "Noto Sans KR", sans-serif',
+                    }}
+                    placeholder="노트를 작성해보세요... (마크다운 지원)"
+                  />
+                </>
+              ) : (
+                <div className="relative">
+                  <div className="prose prose-sm max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ node, ...props }) => (
+                          <h1 className="text-2xl font-bold mb-4 text-[#2C2C2C]" {...props} />
+                        ),
+                        h2: ({ node, ...props }) => (
+                          <h2 className="text-xl font-bold mb-3 text-[#2C2C2C]" {...props} />
+                        ),
+                        h3: ({ node, ...props }) => (
+                          <h3 className="text-lg font-bold mb-2 text-[#2C2C2C]" {...props} />
+                        ),
+                        strong: ({ node, ...props }) => (
+                          <strong className="font-bold text-[#2C2C2C]" {...props} />
+                        ),
+                        em: ({ node, ...props }) => (
+                          <em className="italic text-[#2C2C2C]" {...props} />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul className="list-disc list-inside mb-4 space-y-1" {...props} />
+                        ),
+                        ol: ({ node, ...props }) => (
+                          <ol className="list-decimal list-inside mb-4 space-y-1" {...props} />
+                        ),
+                        li: ({ node, ...props }) => (
+                          <li className="text-[#2C2C2C]" {...props} />
+                        ),
+                        code: ({ node, inline, ...props }: any) =>
+                          inline ? (
+                            <code className="px-1.5 py-0.5 bg-[#F3E5F5] rounded text-sm font-mono text-[#9C27B0]" {...props} />
+                          ) : (
+                            <code className="block p-3 bg-[#F8F6F1] rounded-lg text-sm font-mono text-[#2C2C2C] overflow-x-auto" {...props} />
+                          ),
+                        pre: ({ node, ...props }) => (
+                          <pre className="p-3 bg-[#F8F6F1] rounded-lg overflow-x-auto" {...props} />
+                        ),
+                        a: ({ node, ...props }) => (
+                          <a className="text-[#3B6B4A] underline hover:text-[#2D553A]" target="_blank" rel="noopener noreferrer" {...props} />
+                        ),
+                        p: ({ node, ...props }) => (
+                          <p className="mb-4 text-[#2C2C2C] leading-relaxed" {...props} />
+                        ),
+                      }}
+                    >
+                      {noteContent || "✨ 노트를 작성해보세요!\n\n툴바에서 **볼드**, *이탤릭*, 제목, 리스트 등을 사용할 수 있어요."}
+                    </ReactMarkdown>
+                  </div>
+                  {!noteContent && (
+                    <button
+                      onClick={() => setEditMode(true)}
+                      className="absolute top-0 right-0 px-4 py-2 rounded-lg text-sm font-medium bg-[#3B6B4A] text-white hover:bg-[#2D553A] transition-colors"
+                    >
+                      ✏️ 작성하기
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              {/* 편집 버튼 (미리보기 모드일 때만 표시) */}
+              {!editMode && noteContent && (
+                <div className="flex justify-end mt-4">
                   <button
                     onClick={() => setEditMode(true)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      editMode
-                        ? "bg-[#3B6B4A] text-white"
-                        : "bg-[#F8F6F1] text-[#777777]"
-                    }`}
+                    className="px-4 py-2 rounded-lg text-sm font-medium border border-[#E5E0D8] text-[#777777] hover:bg-[#F8F6F1] transition-colors"
                   >
-                    ✏️ 편집
+                    ✏️ 수정하기
                   </button>
-                  <button
-                    onClick={() => setEditMode(false)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      !editMode
-                        ? "bg-[#3B6B4A] text-white"
-                        : "bg-[#F8F6F1] text-[#777777]"
-                    }`}
-                  >
-                    👁️ 미리보기
-                  </button>
-                </div>
-              </div>
-              
-              {editMode ? (
-                <textarea
-                  value={noteContent}
-                  onChange={(e) => setNoteContent(e.target.value)}
-                  className="w-full h-full min-h-[480px] resize-none outline-none font-normal leading-relaxed"
-                  style={{
-                    color: "#2C2C2C",
-                    fontSize: "14px",
-                    lineHeight: "1.8",
-                    fontFamily: 'Pretendard, "Noto Sans KR", sans-serif',
-                  }}
-                  placeholder="노트를 작성해보세요..."
-                />
-              ) : (
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown
-                    components={{
-                      h1: ({ node, ...props }) => (
-                        <h1 className="text-2xl font-bold mb-4 text-[#2C2C2C]" {...props} />
-                      ),
-                      h2: ({ node, ...props }) => (
-                        <h2 className="text-xl font-bold mb-3 text-[#2C2C2C]" {...props} />
-                      ),
-                      h3: ({ node, ...props }) => (
-                        <h3 className="text-lg font-bold mb-2 text-[#2C2C2C]" {...props} />
-                      ),
-                      strong: ({ node, ...props }) => (
-                        <strong className="font-bold text-[#2C2C2C]" {...props} />
-                      ),
-                      em: ({ node, ...props }) => (
-                        <em className="italic text-[#2C2C2C]" {...props} />
-                      ),
-                      ul: ({ node, ...props }) => (
-                        <ul className="list-disc list-inside mb-4 space-y-1" {...props} />
-                      ),
-                      ol: ({ node, ...props }) => (
-                        <ol className="list-decimal list-inside mb-4 space-y-1" {...props} />
-                      ),
-                      li: ({ node, ...props }) => (
-                        <li className="text-[#2C2C2C]" {...props} />
-                      ),
-                      code: ({ node, inline, ...props }: any) =>
-                        inline ? (
-                          <code className="px-1.5 py-0.5 bg-[#F3E5F5] rounded text-sm font-mono text-[#9C27B0]" {...props} />
-                        ) : (
-                          <code className="block p-3 bg-[#F8F6F1] rounded-lg text-sm font-mono text-[#2C2C2C] overflow-x-auto" {...props} />
-                        ),
-                      pre: ({ node, ...props }) => (
-                        <pre className="p-3 bg-[#F8F6F1] rounded-lg overflow-x-auto" {...props} />
-                      ),
-                      a: ({ node, ...props }) => (
-                        <a className="text-[#3B6B4A] underline hover:text-[#2D553A]" target="_blank" rel="noopener noreferrer" {...props} />
-                      ),
-                      p: ({ node, ...props }) => (
-                        <p className="mb-4 text-[#2C2C2C] leading-relaxed" {...props} />
-                      ),
-                    }}
-                  >
-                    {noteContent}
-                  </ReactMarkdown>
                 </div>
               )}
             </div>
