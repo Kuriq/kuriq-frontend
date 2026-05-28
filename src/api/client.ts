@@ -533,3 +533,27 @@ export async function deleteNote(noteId: string) {
     method: "DELETE",
   });
 }
+
+// ── Progress ────────────────────────────────────────────
+
+export interface RoadmapItemResponse {
+  id: string;
+  weekNumber: number;
+  orderInWeek: number;
+  isCompleted: boolean;
+  completedAt: string | null;
+  course: RoadmapCourse;
+}
+
+export async function completeItem(roadmapItemId: string) {
+  return request<RoadmapItemResponse>("/api/v1/progress/complete", {
+    method: "POST",
+    body: JSON.stringify({ roadmapItemId }),
+  });
+}
+
+export async function uncompleteItem(roadmapItemId: string) {
+  return request<RoadmapItemResponse>(`/api/v1/progress/complete/${roadmapItemId}`, {
+    method: "DELETE",
+  });
+}

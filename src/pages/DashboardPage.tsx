@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse } from "../api/client";
+import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse, completeItem, uncompleteItem } from "../api/client";
 import kuriWink from "../assets/images/kuri-wink.png";
 
 export default function DashboardPage() {
@@ -123,6 +123,26 @@ export default function DashboardPage() {
   );
   const totalItems = roadmap.weeks.reduce((sum, w) => sum + w.items.length, 0);
 
+  // 강좌 완료 상태 토글 핸들러
+  const handleToggleComplete = (itemId: string) => {
+    // 낙관적 업데이트: UI 먼저 변경
+    setRoadmap((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        weeks: prev.weeks.map((week) => ({
+          ...week,
+          items: week.items.map((item) =>
+            item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
+          ),
+          completedCount: week.items.find((i) => i.id === itemId)?.isCompleted
+            ? week.completedCount - 1
+            : week.completedCount + 1,
+        })),
+      };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="대시보드" />
@@ -212,7 +232,7 @@ export default function DashboardPage() {
               {/* Course cards */}
               <div className="space-y-3">
                 {currentWeek.items.map((item) => (
-                  <CourseCard key={item.id} item={item} />
+                  <CourseCard key={item.id} item={item} onToggleComplete={handleToggleComplete} />
                 ))}
               </div>
             </div>
@@ -309,7 +329,7 @@ export default function DashboardPage() {
   );
 }
 
-function CourseCard({ item }: { item: RoadmapItem }) {
+function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleComplete: (itemId: string) => void }) {
   const navigate = useNavigate();
   const { course, isCompleted } = item;
   const [loading, setLoading] = useState(false);
@@ -318,12 +338,26 @@ function CourseCard({ item }: { item: RoadmapItem }) {
     setLoading(true);
     try {
       const note = await getNoteByCourse(course.id);
-      // 노트 존재하면 courseId 로 이동 (에디터에서 로드)
       navigate(`/note-editor?courseId=${course.id}`);
     } catch (err) {
       console.log("노트 조회 실패:", err);
-      // 404 = 노트 없음 → courseId 로 이동 (에디터에서 자동 생성)
       navigate(`/note-editor?courseId=${course.id}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckboxClick = async () => {
+    setLoading(true);
+    try {
+      if (isCompleted) {
+        await uncompleteItem(item.id);
+      } else {
+        await completeItem(item.id);
+      }
+      onToggleComplete(item.id);
+    } catch (err) {
+      console.error("강좌 완료 상태 변경 실패:", err);
     } finally {
       setLoading(false);
     }
@@ -346,13 +380,20 @@ function CourseCard({ item }: { item: RoadmapItem }) {
     >
       <button
         type="button"
-        onClick={() => {}}
-        className="flex-shrink-0 w-[22px] h-[22px] rounded flex items-center justify-center transition-colors"
+        onClick={handleCheckboxClick}
+        disabled={loading}
+        className="flex-shrink-0 w-[22px] h-[22px] rounded flex items-center justify-center transition-colors disabled:opacity-50"
         style={{ backgroundColor: isCompleted ? '#3B6B4A' : 'transparent', border: isCompleted ? 'none' : '2px solid #E5E0D8' }}
       >
-        {isCompleted && (
+        {!loading && isCompleted && (
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M2 7L5.5 10.5L12 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        {loading && (
+          <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" stroke="#3B6B4A" strokeWidth="2" fill="none" opacity="0.3"/>
+            <path d="M7 1a6 6 0 0 1 6 6" stroke="#3B6B4A" strokeWidth="2" fill="none"/>
           </svg>
         )}
       </button>
