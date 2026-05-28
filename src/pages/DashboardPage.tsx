@@ -130,15 +130,23 @@ export default function DashboardPage() {
       if (!prev) return null;
       return {
         ...prev,
-        weeks: prev.weeks.map((week) => ({
-          ...week,
-          items: week.items.map((item) =>
-            item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
-          ),
-          completedCount: week.items.find((i) => i.id === itemId)?.isCompleted
-            ? week.completedCount - 1
-            : week.completedCount + 1,
-        })),
+        weeks: prev.weeks.map((week) => {
+          // 현재 주차의 항목만 업데이트
+          const targetItem = week.items.find((i) => i.id === itemId);
+          if (!targetItem) return week;
+          
+          const willBeCompleted = !targetItem.isCompleted;
+          
+          return {
+            ...week,
+            items: week.items.map((item) =>
+              item.id === itemId ? { ...item, isCompleted: willBeCompleted } : item
+            ),
+            completedCount: willBeCompleted
+              ? week.completedCount + 1
+              : week.completedCount - 1,
+          };
+        }),
       };
     });
   };
@@ -317,7 +325,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <span style={{ fontSize: '20px' }}>📊</span>
                   <p className="text-sm font-bold" style={{ color: '#2C2C2C' }}>
-                    진행률 {roadmap.progressPercent}%
+                    진행률 {roadmap.progressPercent.toFixed(1)}%
                   </p>
                 </div>
               </div>
@@ -444,14 +452,17 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
           </a>
         )}
         {isCompleted && (
-          <button
+          <a
+            href={course.url}
+            target="_blank"
+            rel="noopener noreferrer"
             className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
             style={{ borderColor: '#3B6B4A', color: '#3B6B4A', backgroundColor: 'transparent' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E8F0EA'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             🔁 복습하기
-          </button>
+          </a>
         )}
       </div>
     </div>
