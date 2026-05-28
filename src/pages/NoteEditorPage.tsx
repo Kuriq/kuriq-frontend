@@ -38,6 +38,68 @@ export default function NoteEditorPage() {
     addContentToNote,
   } = useNote(courseId);
 
+  // 에디터 포맷팅 함수들
+  const insertFormatting = (before: string, after: string = "", placeholder: string = "") => {
+    const textarea = document.querySelector("textarea");
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = noteContent.substring(start, end) || placeholder;
+    const newText = 
+      noteContent.substring(0, start) + 
+      before + selectedText + after + 
+      noteContent.substring(end);
+    
+    setNoteContent(newText);
+    
+    // 커서 위치 조정
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + before.length,
+        end + before.length
+      );
+    }, 0);
+  };
+
+  const handleBold = () => insertFormatting("**", "**", "굵게");
+  const handleItalic = () => insertFormatting("*", "*", "기울임");
+  const handleHeading = (level: string) => {
+    const textarea = document.querySelector("textarea");
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const lineStart = noteContent.lastIndexOf("\n", start - 1) + 1;
+    const hashes = level === "h1" ? "##" : level === "h2" ? "###" : "####";
+    const newText = 
+      noteContent.substring(0, lineStart) + 
+      hashes + " " + 
+      noteContent.substring(lineStart);
+    
+    setNoteContent(newText);
+  };
+  const handleBulletList = () => insertFormatting("\n- ", "", "리스트 항목");
+  const handleNumberedList = () => insertFormatting("\n1. ", "", "리스트 항목");
+  const handleCodeBlock = () => insertFormatting("\n```\n", "\n```\n", "코드");
+  const handleLink = () => {
+    const url = prompt("링크 URL 을 입력하세요:");
+    if (url) {
+      const textarea = document.querySelector("textarea");
+      if (!textarea) return;
+      
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = noteContent.substring(start, end) || "링크 텍스트";
+      const newText = 
+        noteContent.substring(0, start) + 
+        `[${selectedText}](${url})` + 
+        noteContent.substring(end);
+      
+      setNoteContent(newText);
+    }
+  };
+
   const {
     chatMessages,
     chatInput,
@@ -67,7 +129,7 @@ export default function NoteEditorPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F8F6F1" }}>
-      <Navigation activeMenu="" />
+      <Navigation activeMenu="대시보드" />
 
       <div className="max-w-[1440px] mx-auto px-8 py-6">
         {/* Back Button */}
@@ -141,7 +203,15 @@ export default function NoteEditorPage() {
             </div>
 
             {/* Editor Toolbar */}
-            <EditorToolbar onAiOrganize={handleAiOrganize} disabled={!noteId || loading} />
+            <EditorToolbar
+              onBold={handleBold}
+              onItalic={handleItalic}
+              onHeading={handleHeading}
+              onBulletList={handleBulletList}
+              onNumberedList={handleNumberedList}
+              onCodeBlock={handleCodeBlock}
+              onLink={handleLink}
+            />
 
             {/* Main Editor Area */}
             <div className="bg-white rounded-xl p-6 border border-[#E5E0D8] min-h-[500px]">
