@@ -20,7 +20,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
-  const size = 10;
+  const size = 20;
 
   const fetchCourses = useCallback(async (pageNum = 0) => {
     setLoading(true);
@@ -84,13 +84,13 @@ export default function SearchPage() {
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <FilterDropdownButton
               label="플랫폼"
-              options={["K-MOOC", "KOCW", "온국민평생배움터", "서울시 평생학습포털"]}
+              options={["온국민평생배움터", "K-MOOC", "KOCW", "서울시 평생학습포털"]}
               value={platform}
               onChange={setPlatform}
             />
             <FilterDropdownButton
               label="카테고리"
-              options={["인문", "사회", "공학", "IT/SW", "자연과학", "교육", "예술", "의약학", "프로그래밍", "데이터 분석"]}
+              options={["인문", "사회", "자연과학", "교육", "예술", "의약학", "공학", "IT/SW", "데이터 분석", "외국어", "경제/경영", "가족/건강/운동", "디지털", "환경/생태", "문화/예술"]}
               value={category}
               onChange={setCategory}
             />
