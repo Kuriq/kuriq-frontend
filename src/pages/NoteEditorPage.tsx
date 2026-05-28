@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronRight } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import kuriWink from "../../assets/images/kuri-wink.png";
 import { useNote } from "./NoteEditorPage/useNote";
 import { useNoteChat } from "./NoteEditorPage/useNoteChat";
@@ -18,6 +19,7 @@ export default function NoteEditorPage() {
   const courseId = searchParams.get("courseId") || "";
 
   const [activeTab, setActiveTab] = useState<"organize" | "quiz" | "chat">("chat");
+  const [editMode, setEditMode] = useState(true); // 편집 모드 vs 미리보기 모드
 
   // Custom hooks
   const {
@@ -173,7 +175,10 @@ export default function NoteEditorPage() {
                 </span>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={handleManualSave}
+                    onClick={() => {
+                      handleManualSave();
+                      setEditMode(false); // 저장 후 미리보기로 전환
+                    }}
                     disabled={!noteId || saving || !noteContent}
                     className="px-3 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                     style={{
@@ -215,18 +220,93 @@ export default function NoteEditorPage() {
 
             {/* Main Editor Area */}
             <div className="bg-white rounded-xl p-6 border border-[#E5E0D8] min-h-[500px]">
-              <textarea
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                className="w-full h-full min-h-[480px] resize-none outline-none font-normal leading-relaxed"
-                style={{
-                  color: "#2C2C2C",
-                  fontSize: "14px",
-                  lineHeight: "1.8",
-                  fontFamily: 'Pretendard, "Noto Sans KR", sans-serif',
-                }}
-                placeholder="노트를 작성해보세요..."
-              />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      editMode
+                        ? "bg-[#3B6B4A] text-white"
+                        : "bg-[#F8F6F1] text-[#777777]"
+                    }`}
+                  >
+                    ✏️ 편집
+                  </button>
+                  <button
+                    onClick={() => setEditMode(false)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      !editMode
+                        ? "bg-[#3B6B4A] text-white"
+                        : "bg-[#F8F6F1] text-[#777777]"
+                    }`}
+                  >
+                    👁️ 미리보기
+                  </button>
+                </div>
+              </div>
+              
+              {editMode ? (
+                <textarea
+                  value={noteContent}
+                  onChange={(e) => setNoteContent(e.target.value)}
+                  className="w-full h-full min-h-[480px] resize-none outline-none font-normal leading-relaxed"
+                  style={{
+                    color: "#2C2C2C",
+                    fontSize: "14px",
+                    lineHeight: "1.8",
+                    fontFamily: 'Pretendard, "Noto Sans KR", sans-serif',
+                  }}
+                  placeholder="노트를 작성해보세요..."
+                />
+              ) : (
+                <div className="prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ node, ...props }) => (
+                        <h1 className="text-2xl font-bold mb-4 text-[#2C2C2C]" {...props} />
+                      ),
+                      h2: ({ node, ...props }) => (
+                        <h2 className="text-xl font-bold mb-3 text-[#2C2C2C]" {...props} />
+                      ),
+                      h3: ({ node, ...props }) => (
+                        <h3 className="text-lg font-bold mb-2 text-[#2C2C2C]" {...props} />
+                      ),
+                      strong: ({ node, ...props }) => (
+                        <strong className="font-bold text-[#2C2C2C]" {...props} />
+                      ),
+                      em: ({ node, ...props }) => (
+                        <em className="italic text-[#2C2C2C]" {...props} />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul className="list-disc list-inside mb-4 space-y-1" {...props} />
+                      ),
+                      ol: ({ node, ...props }) => (
+                        <ol className="list-decimal list-inside mb-4 space-y-1" {...props} />
+                      ),
+                      li: ({ node, ...props }) => (
+                        <li className="text-[#2C2C2C]" {...props} />
+                      ),
+                      code: ({ node, inline, ...props }: any) =>
+                        inline ? (
+                          <code className="px-1.5 py-0.5 bg-[#F3E5F5] rounded text-sm font-mono text-[#9C27B0]" {...props} />
+                        ) : (
+                          <code className="block p-3 bg-[#F8F6F1] rounded-lg text-sm font-mono text-[#2C2C2C] overflow-x-auto" {...props} />
+                        ),
+                      pre: ({ node, ...props }) => (
+                        <pre className="p-3 bg-[#F8F6F1] rounded-lg overflow-x-auto" {...props} />
+                      ),
+                      a: ({ node, ...props }) => (
+                        <a className="text-[#3B6B4A] underline hover:text-[#2D553A]" target="_blank" rel="noopener noreferrer" {...props} />
+                      ),
+                      p: ({ node, ...props }) => (
+                        <p className="mb-4 text-[#2C2C2C] leading-relaxed" {...props} />
+                      ),
+                    }}
+                  >
+                    {noteContent}
+                  </ReactMarkdown>
+                </div>
+              )}
             </div>
           </div>
 
