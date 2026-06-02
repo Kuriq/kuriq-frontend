@@ -3,9 +3,9 @@ import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { useAuth } from "../context/AuthContext";
-import { generateRoadmap } from "../api/client";
 
 export default function Home() {
+  const PENDING_ROADMAP_PROMPT_KEY = "pendingRoadmapPrompt";
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,8 @@ export default function Home() {
   ];
 
   const handleGenerateRoadmap = async () => {
-    if (!inputText.trim()) return;
+    const trimmedPrompt = inputText.trim();
+    if (!trimmedPrompt) return;
 
     if (!isAuthenticated) {
       setError("로드맵 생성은 로그인 후 이용 가능합니다.");
@@ -30,15 +31,8 @@ export default function Home() {
 
     setLoading(true);
     setError(null);
-    try {
-      const roadmap = await generateRoadmap(inputText.trim());
-      navigate("/loading-roadmap", { state: { roadmapId: roadmap.id } });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "로드맵 생성에 실패했습니다.";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+    sessionStorage.setItem(PENDING_ROADMAP_PROMPT_KEY, trimmedPrompt);
+    navigate("/loading-roadmap", { state: { prompt: trimmedPrompt } });
   };
 
   const handleChipClick = (chip: string) => {

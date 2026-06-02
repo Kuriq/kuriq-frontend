@@ -4,6 +4,8 @@ import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse, completeItem, uncompleteItem } from "../api/client";
 import kuriWink from "../assets/images/kuri-wink.png";
+import kuriSuccess from "../assets/images/kuri-success.png";
+import { getPlatformLabel } from "../utils/platform";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -11,6 +13,7 @@ export default function DashboardPage() {
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,6 +95,7 @@ export default function DashboardPage() {
   const currentWeek = roadmap.weeks[currentWeekIndex];
   const prevWeek = currentWeekIndex > 0 ? roadmap.weeks[currentWeekIndex - 1] : null;
   const nextWeek = currentWeekIndex < roadmap.weeks.length - 1 ? roadmap.weeks[currentWeekIndex + 1] : null;
+  const selectedWeekNumber = currentWeek?.weekNumber ?? roadmap.currentWeek;
 
   // currentWeek 가 없으면 에러 처리
   if (!currentWeek) {
@@ -124,31 +128,68 @@ export default function DashboardPage() {
   const totalItems = roadmap.weeks.reduce((sum, w) => sum + w.items.length, 0);
 
   // 강좌 완료 상태 토글 핸들러
-  const handleToggleComplete = (itemId: string) => {
-    // 낙관적 업데이트: UI 먼저 변경
+  const handleToggleComplete = (itemId: string, willBeCompleted: boolean) => {
+    let nextSelectedWeekIndex: number | null = null;
+
     setRoadmap((prev) => {
       if (!prev) return null;
+
+      const nextWeeks = prev.weeks.map((week) => {
+        const targetItem = week.items.find((i) => i.id === itemId);
+        if (!targetItem) return week;
+
+        const nextCompletedCount = willBeCompleted
+          ? week.completedCount + 1
+          : week.completedCount - 1;
+
+        return {
+          ...week,
+          items: week.items.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  isCompleted: willBeCompleted,
+                  completedAt: willBeCompleted ? new Date().toISOString() : null,
+                }
+              : item
+          ),
+          completedCount: nextCompletedCount,
+          weekProgressPercent: week.totalCount > 0 ? (nextCompletedCount / week.totalCount) * 100 : 0,
+        };
+      });
+
+      const nextTotalItems = nextWeeks.reduce((sum, week) => sum + week.items.length, 0);
+      const nextCompletedItems = nextWeeks.reduce(
+        (sum, week) => sum + week.items.filter((i) => i.isCompleted).length,
+        0
+      );
+      const nextProgressPercent = nextTotalItems > 0 ? (nextCompletedItems / nextTotalItems) * 100 : 0;
+      const nextIsCompleted = nextTotalItems > 0 && nextCompletedItems === nextTotalItems;
+      const nextCurrentWeek = nextWeeks.find((week) => week.items.some((item) => !item.isCompleted))?.weekNumber ?? prev.totalWeeks;
+      const selectedWeekNumber = prev.weeks[currentWeekIndex]?.weekNumber;
+
+      if (selectedWeekNumber === prev.currentWeek) {
+        const candidateIndex = nextWeeks.findIndex((week) => week.weekNumber === nextCurrentWeek);
+        nextSelectedWeekIndex = candidateIndex >= 0 ? candidateIndex : 0;
+      }
+
+      if (!prev.isCompleted && nextIsCompleted) {
+        setShowCompletionModal(true);
+      }
+
       return {
         ...prev,
-        weeks: prev.weeks.map((week) => {
-          // 현재 주차의 항목만 업데이트
-          const targetItem = week.items.find((i) => i.id === itemId);
-          if (!targetItem) return week;
-          
-          const willBeCompleted = !targetItem.isCompleted;
-          
-          return {
-            ...week,
-            items: week.items.map((item) =>
-              item.id === itemId ? { ...item, isCompleted: willBeCompleted } : item
-            ),
-            completedCount: willBeCompleted
-              ? week.completedCount + 1
-              : week.completedCount - 1,
-          };
-        }),
+        weeks: nextWeeks,
+        isCompleted: nextIsCompleted,
+        currentWeek: nextCurrentWeek,
+        progressPercent: nextProgressPercent,
+        completedAt: nextIsCompleted ? new Date().toISOString() : prev.completedAt,
       };
     });
+
+    if (nextSelectedWeekIndex !== null) {
+      setCurrentWeekIndex(nextSelectedWeekIndex);
+    }
   };
 
   return (
@@ -261,8 +302,9 @@ export default function DashboardPage() {
 
                   {roadmap.weeks.map((week) => {
                     const isCompleted = week.weekProgressPercent >= 100;
-                    const isCurrent = week.weekNumber === roadmap.currentWeek;
-                    const isFuture = week.weekNumber > roadmap.currentWeek;
+                    const isCurrent = week.weekNumber === selectedWeekNumber;
+                    const isFuture = week.weekNumber > selectedWeekNumber;
+                    const shouldFillCircle = isCompleted || isCurrent;
 
                     return (
                       <div
@@ -279,9 +321,9 @@ export default function DashboardPage() {
                             width: isCurrent ? '40px' : '32px',
                             height: isCurrent ? '40px' : '32px',
                             borderRadius: '50%',
-                            backgroundColor: isCompleted || isCurrent ? '#3B6B4A' : 'white',
-                            border: isFuture ? '2px solid #E5E0D8' : 'none',
-                            color: isFuture ? '#AAAAAA' : 'white',
+                            backgroundColor: shouldFillCircle ? '#3B6B4A' : 'white',
+                            border: shouldFillCircle ? 'none' : '2px solid #E5E0D8',
+                            color: shouldFillCircle ? 'white' : '#AAAAAA',
                             fontSize: isCurrent ? '16px' : '14px'
                           }}
                         >
@@ -333,11 +375,19 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {showCompletionModal && roadmap && (
+        <RoadmapCompletionModal
+          goal={roadmap.goal}
+          onClose={() => setShowCompletionModal(false)}
+          onGoMyRoadmaps={() => navigate("/roadmap")}
+        />
+      )}
     </div>
   );
 }
 
-function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleComplete: (itemId: string) => void }) {
+function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleComplete: (itemId: string, willBeCompleted: boolean) => void }) {
   const navigate = useNavigate();
   const { course, isCompleted } = item;
   const [loading, setLoading] = useState(false);
@@ -358,12 +408,13 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
   const handleCheckboxClick = async () => {
     setLoading(true);
     try {
+      const willBeCompleted = !isCompleted;
       if (isCompleted) {
         await uncompleteItem(item.id);
       } else {
         await completeItem(item.id);
       }
-      onToggleComplete(item.id);
+      onToggleComplete(item.id, willBeCompleted);
     } catch (err) {
       console.error("강좌 완료 상태 변경 실패:", err);
     } finally {
@@ -375,8 +426,10 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
     KOCW: "bg-[#E3F2FD] text-[#1976D2]",
     온국민평생배움터: "bg-[#FFE8D6] text-[#A05A2C]",
+    전국평생학습: "bg-[#FDEEF3] text-[#C75B7A]",
     서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
   };
+  const displayPlatform = getPlatformLabel(course.platform);
 
   return (
     <div
@@ -418,8 +471,8 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
           >
             {course.title}
           </p>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${platformColors[course.platform] || platformColors["K-MOOC"]}`}>
-            {course.platform}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${platformColors[displayPlatform] || platformColors["K-MOOC"]}`}>
+            {displayPlatform}
           </span>
           <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#F3E5F5] text-[#9C27B0]">
             {course.category}
@@ -464,6 +517,52 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
             🔁 복습하기
           </a>
         )}
+      </div>
+    </div>
+  );
+}
+
+function RoadmapCompletionModal({
+  goal,
+  onClose,
+  onGoMyRoadmaps,
+}: {
+  goal: string;
+  onClose: () => void;
+  onGoMyRoadmaps: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
+      <div className="w-full max-w-[460px] rounded-[28px] bg-white p-8 text-center shadow-2xl border border-[#E5E0D8]">
+        <img
+          src={kuriSuccess}
+          alt="로드맵 완료"
+          className="mx-auto mb-5 h-[120px] w-[120px] animate-bounce object-contain drop-shadow-[0_10px_20px_rgba(59,107,74,0.18)]"
+        />
+        <p className="mb-2 text-[14px] font-[700] text-[#3B6B4A]">로드맵 완료</p>
+        <h2 className="mb-3 text-[24px] font-[800] text-[#2C2C2C]">끝까지 해냈어요!</h2>
+        <p className="mb-7 break-keep text-[14px] leading-relaxed text-[#777777]">
+          <span className="font-[700] text-[#2C2C2C]">{goal}</span>
+          <br />
+          학습 여정을 모두 마쳤어요. 정말 수고 많았어요.
+        </p>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={onGoMyRoadmaps}
+            className="flex-1 rounded-full bg-[#3B6B4A] px-5 py-3 text-[14px] font-[700] text-white transition-colors hover:bg-[#2d5438]"
+          >
+            내 로드맵 보기
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-full border border-[#E5E0D8] bg-white px-5 py-3 text-[14px] font-[700] text-[#2C2C2C] transition-colors hover:bg-[#F8F6F1]"
+          >
+            닫기
+          </button>
+        </div>
       </div>
     </div>
   );
