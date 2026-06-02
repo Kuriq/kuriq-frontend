@@ -283,7 +283,6 @@ export interface RoadmapWeek {
 
 export interface Roadmap {
   id: string;
-  title: string;
   goal: string;
   prompt: string;
   totalWeeks: number;

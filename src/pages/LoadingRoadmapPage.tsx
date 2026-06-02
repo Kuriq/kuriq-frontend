@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import kuriLoading from "../assets/images/kuri-loading.png";
-import { generateRoadmap } from "../api/client";
-
-const PENDING_ROADMAP_PROMPT_KEY = "pendingRoadmapPrompt";
 
 export default function LoadingRoadmapPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [activeDot, setActiveDot] = useState(0);
-  const [error, setError] = useState<string | null>(null);
 
   const messages = [
     "큐리가 강좌를 찾고 있어요...",
@@ -36,71 +32,20 @@ export default function LoadingRoadmapPage() {
     return () => clearInterval(dotInterval);
   }, []);
 
-  // 실제 로드맵 생성 후 결과 페이지로 이동
+  // Navigate to roadmap result with the roadmapId
   useEffect(() => {
-    let cancelled = false;
-    const state = (location.state as { roadmapId?: string; prompt?: string } | null) ?? null;
-    const roadmapId = state?.roadmapId;
-    const prompt = state?.prompt ?? sessionStorage.getItem(PENDING_ROADMAP_PROMPT_KEY);
-
-    if (roadmapId) {
-      sessionStorage.removeItem(PENDING_ROADMAP_PROMPT_KEY);
-      navigate("/roadmap-result", { state: { roadmapId } });
-      return;
-    }
-
-    if (!prompt) {
+    const roadmapId = location.state?.roadmapId;
+    if (!roadmapId) {
       navigate("/");
       return;
     }
 
-    const run = async () => {
-      try {
-        sessionStorage.setItem(PENDING_ROADMAP_PROMPT_KEY, prompt);
-        const roadmap = await generateRoadmap(prompt);
-        if (!cancelled) {
-          sessionStorage.removeItem(PENDING_ROADMAP_PROMPT_KEY);
-          navigate("/roadmap-result", { state: { roadmapId: roadmap.id } });
-        }
-      } catch (err: unknown) {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : "로드맵 생성에 실패했습니다.";
-          setError(message);
-        }
-      }
-    };
+    const timeout = setTimeout(() => {
+      navigate("/roadmap-result", { state: { roadmapId } });
+    }, 12000);
 
-    run();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => clearTimeout(timeout);
   }, [navigate, location.state]);
-
-  if (error) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{ backgroundColor: '#F8F6F1' }}
-      >
-        <div className="w-full max-w-[420px] rounded-[24px] border border-[#E5E0D8] bg-white p-8 text-center shadow-sm">
-          <img src={kuriLoading} alt="" className="mx-auto mb-5 h-[88px] w-[88px] object-contain" />
-          <h1 className="mb-3 text-[22px] font-[800] text-[#2C2C2C]">로드맵 생성에 실패했어요</h1>
-          <p className="mb-6 text-[14px] leading-relaxed text-[#777777]">{error}</p>
-          <button
-            type="button"
-            onClick={() => {
-              sessionStorage.removeItem(PENDING_ROADMAP_PROMPT_KEY);
-              navigate("/");
-            }}
-            className="rounded-full bg-[#3B6B4A] px-6 py-3 text-[14px] font-[700] text-white transition-colors hover:bg-[#2d5438]"
-          >
-            홈으로 돌아가기
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div

@@ -12,7 +12,6 @@ import { OrganizeTab } from "./NoteEditorPage/components/OrganizeTab";
 import { ChatTab } from "./NoteEditorPage/components/ChatTab";
 import { QuizTab } from "./NoteEditorPage/components/QuizTab";
 import { QuizResultModal } from "./NoteEditorPage/components/QuizResultModal";
-import { getPlatformLabel } from "../utils/platform";
 
 export default function NoteEditorPage() {
   const navigate = useNavigate();
@@ -166,7 +165,7 @@ export default function NoteEditorPage() {
                     className="px-3 py-1 rounded-full text-xs font-medium"
                     style={{ backgroundColor: "#E8F0EA", color: "#3B6B4A" }}
                   >
-                    {getPlatformLabel(platform)}
+                    {platform}
                   </span>
                 )}
               </div>
