@@ -4,6 +4,7 @@ import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { useAuth } from "../context/AuthContext";
 import { getUserStats, getCategoryStats, getLearningHistory, type UserStats, type CategoryStat, type LearningHistoryItem } from "../api/client";
+import { getPlatformLabel } from "../utils/platform";
 
 export default function MyPage() {
   const { user } = useAuth();
@@ -202,8 +203,10 @@ function RecentCompletionItem({
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
     KOCW: "bg-[#EBF5FB] text-[#3498DB]",
     온국민평생배움터: "bg-[#FFF3EB] text-[#E8985E]",
+    전국평생학습: "bg-[#FDEEF3] text-[#C75B7A]",
     서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
   };
+  const displayPlatform = getPlatformLabel(platform);
 
   return (
     <div className="flex items-start gap-3 mb-4 last:mb-0">
@@ -220,10 +223,10 @@ function RecentCompletionItem({
         <div className="flex items-center gap-2">
           <span
             className={`px-2.5 py-0.5 rounded-full text-[11px] font-[600] ${
-              platformColors[platform] || platformColors["K-MOOC"]
+              platformColors[displayPlatform] || platformColors["K-MOOC"]
             }`}
           >
-            {platform}
+            {displayPlatform}
           </span>
           <span className="text-[12px] text-[#777777]">{date} 이수</span>
         </div>

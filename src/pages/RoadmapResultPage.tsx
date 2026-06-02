@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { getRoadmap, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
+import { getPlatformLabel } from "../utils/platform";
 
 export default function RoadmapResultPage() {
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ export default function RoadmapResultPage() {
             <div>
               <h1 className="text-[24px] font-[800] text-[#2C2C2C] mb-2">맞춤 로드맵이 완성됐어요!</h1>
               <p className="text-[14px] text-[#777777]">
-                {roadmap.totalWeeks}주 과정 · 주 {roadmap.weeklyHours}시간 · 강좌 {roadmap.totalCourses}개
+                {roadmap.totalWeeks}주 과정 · 강좌 {roadmap.totalCourses}개
               </p>
             </div>
           </div>
@@ -146,21 +147,9 @@ function RoadmapCourseCard({ item }: { item: RoadmapItem }) {
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
     KOCW: "bg-[#EBF5FB] text-[#3498DB]",
     온국민평생배움터: "bg-[#FFF3EB] text-[#E8985E]",
-    서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
+    전국평생학습: "bg-[#F3E5F5] text-[#9C27B0]",
   };
-
-  const levelColors: Record<string, string> = {
-    입문: "bg-[#FFF3EB] text-[#E8985E]",
-    초급: "bg-[#FFF3EB] text-[#E8985E]",
-    중급: "bg-[#FEF3E7] text-[#E67E22]",
-    심화: "bg-[#FDE8E8] text-[#C0392B]",
-  };
-
-  const hoursText = course.estimatedHours
-    ? course.estimatedHours < 1
-      ? `${Math.round(course.estimatedHours * 60)}분`
-      : `${course.estimatedHours}시간`
-    : "";
+  const displayPlatform = getPlatformLabel(course.platform);
 
   return (
     <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors">
@@ -168,17 +157,12 @@ function RoadmapCourseCard({ item }: { item: RoadmapItem }) {
         <div className="flex-1">
           <h4 className="text-[14px] font-[600] text-[#2C2C2C] mb-3">{course.title}</h4>
           <div className="flex flex-wrap gap-2">
-            <span className={`px-3 py-1 rounded-full text-[11px] font-[600] ${platformColors[course.platform] || platformColors["K-MOOC"]}`}>
-              {course.platform}
+            <span className={`px-3 py-1 rounded-full text-[11px] font-[600] ${platformColors[displayPlatform] || platformColors["K-MOOC"]}`}>
+              {displayPlatform}
             </span>
-            <span className={`px-3 py-1 rounded-full text-[11px] font-[600] ${levelColors[course.difficulty] || levelColors.입문}`}>
-              {course.difficulty}
+            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#F3E5F5] text-[#9C27B0]">
+              {course.category}
             </span>
-            {hoursText && (
-              <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#EBF5FB] text-[#3498DB]">
-                {hoursText}
-              </span>
-            )}
           </div>
         </div>
         <a
