@@ -8,6 +8,8 @@ import kuriLogo from "../assets/images/kuri-logo.png";
 
 type FilterType = "all" | "completed" | "abandoned";
 
+const formatProgressPercent = (value: number) => value.toFixed(1);
+
 export default function MyRoadmapsPage() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
@@ -162,14 +164,14 @@ export default function MyRoadmapsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-bold" style={{ color: '#2C2C2C', fontSize: '20px' }}>
-                        {activeRoadmap.goal}
+                        {activeRoadmap.title || activeRoadmap.goal}
                       </h3>
                       <span className="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap" style={{ backgroundColor: '#E8F0EA', color: '#3B6B4A' }}>
                         📌 진행 중
                       </span>
                     </div>
                     <p className="text-sm truncate" style={{ color: '#555555' }}>
-                      {activeRoadmap.prompt}
+                      {activeRoadmap.goal}
                     </p>
                   </div>
 
@@ -186,7 +188,6 @@ export default function MyRoadmapsPage() {
 
                 <div className="flex items-center gap-4 mb-4 text-[13px]" style={{ color: '#777777' }}>
                   <span>📅 {activeRoadmap.totalWeeks}주 과정</span>
-                  <span>⏰ 주 {activeRoadmap.weeklyHours}시간</span>
                   <span>📚 {activeRoadmap.totalCourses}개 강좌</span>
                 </div>
 
@@ -194,7 +195,7 @@ export default function MyRoadmapsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-sm" style={{ color: '#2C2C2C' }}>전체 진행률</span>
                     <span className="font-bold" style={{ color: '#3B6B4A', fontSize: '18px' }}>
-                      {activeRoadmap.progressPercent}%
+                      {formatProgressPercent(activeRoadmap.progressPercent)}%
                     </span>
                   </div>
                   <div className="w-full h-3 rounded-full mb-2 overflow-hidden" style={{ backgroundColor: '#E5E0D8' }}>
@@ -320,10 +321,10 @@ export default function MyRoadmapsPage() {
                   </div>
 
                   <h3 className="font-bold mb-2 line-clamp-2" style={{ color: '#2C2C2C', fontSize: '16px' }}>
-                    {roadmap.goal}
+                    {roadmap.title || roadmap.goal}
                   </h3>
-                  <p className="text-[13px] mb-3 truncate" style={{ color: '#777777' }}>
-                    {roadmap.prompt}
+                  <p className="text-[13px] mb-3 line-clamp-2" style={{ color: '#777777' }}>
+                    {roadmap.goal}
                   </p>
 
                   <div className="text-xs mb-3" style={{ color: '#999999' }}>

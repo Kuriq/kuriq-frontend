@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
 import { searchCourses, type CourseSearchResult } from "../api/client";
+import { getPlatformFilterValue, getPlatformLabel } from "../utils/platform";
 
 // 프론트 정렬 라벨 → 백엔드 정렬 파라매터 매핑
 const sortMap: Record<string, string> = {
@@ -27,7 +28,7 @@ export default function SearchPage() {
     try {
       const res = await searchCourses({
         keyword: searchQuery || undefined,
-        platform: platform || undefined,
+        platform: platform ? getPlatformFilterValue(platform) : undefined,
         category: category || undefined,
         sort: sortMap[sortBy] || "latest",
         page: pageNum,
@@ -55,6 +56,14 @@ export default function SearchPage() {
     setCategory("");
     setSortBy("최신순");
   };
+
+  // 필터 변경 시 즉시 검색 실행
+  useEffect(() => {
+    if (platform || category) {
+      setPage(0);
+      fetchCourses(0);
+    }
+  }, [platform, category]);
 
   // 초기 로딩 시 전체 강좌 조회
   useEffect(() => {
@@ -84,13 +93,13 @@ export default function SearchPage() {
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <FilterDropdownButton
               label="플랫폼"
-              options={["온국민평생배움터", "K-MOOC", "KOCW", "서울시 평생학습포털"]}
+              options={["온국민평생배움터", "K-MOOC", "KOCW", "전국평생학습"]}
               value={platform}
               onChange={setPlatform}
             />
             <FilterDropdownButton
               label="카테고리"
-              options={["인문", "사회", "자연과학", "교육", "예술", "의약학", "공학", "IT/SW", "데이터 분석", "외국어", "경제/경영", "가족/건강/운동", "디지털", "환경/생태", "문화/예술"]}
+              options={["인문·교양", "사회·법", "자연과학·공학", "IT·데이터", "의료·보건", "예술·문화", "경영·경제", "외국어", "취미·생활", "기타"]}
               value={category}
               onChange={setCategory}
             />
@@ -211,6 +220,16 @@ function FilterDropdownButton({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleOptionClick = (option: string) => {
+    // 이미 선택된 옵션을 다시 클릭하면 해제 (토글)
+    if (value === option) {
+      onChange("");
+    } else {
+      onChange(option);
+    }
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative">
       <button
@@ -244,10 +263,7 @@ function FilterDropdownButton({
               <button
                 key={option}
                 type="button"
-                onClick={() => {
-                  onChange(option);
-                  setIsOpen(false);
-                }}
+                onClick={() => handleOptionClick(option)}
                 className={`w-full px-4 py-2 text-left text-[13px] hover:bg-[#F8F6F1] transition-colors ${
                   value === option ? "text-[#3B6B4A] font-[600]" : "text-[#2C2C2C]"
                 }`}
@@ -347,8 +363,10 @@ function SearchResultCard({
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
     KOCW: "bg-[#EBF5FB] text-[#3498DB]",
     온국민평생배움터: "bg-[#FFF3EB] text-[#E8985E]",
+    전국평생학습: "bg-[#FDEEF3] text-[#C75B7A]",
     서울시평생학습포털: "bg-[#F3E5F5] text-[#9C27B0]",
   };
+  const displayPlatform = getPlatformLabel(platform);
 
   return (
     <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors">
@@ -359,10 +377,10 @@ function SearchResultCard({
           <div className="flex flex-wrap gap-2">
             <span
               className={`px-3 py-1 rounded-full text-[11px] font-[600] ${
-                platformColors[platform] || platformColors["K-MOOC"]
+                platformColors[displayPlatform] || platformColors["K-MOOC"]
               }`}
             >
-              {platform}
+              {displayPlatform}
             </span>
             <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#F3E5F5] text-[#9C27B0]">
               {category}
