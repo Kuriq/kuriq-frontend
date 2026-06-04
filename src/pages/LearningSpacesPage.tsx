@@ -7,7 +7,7 @@ import { Navigation } from "../components/layout/Navigation";
 import kuriWink from "../assets/images/kuri-wink.png";
 import "leaflet/dist/leaflet.css";
 
-type FilterType = "all" | "LIBRARY" | "LIFELONG_LEARNING" | "FIFTY_PLUS" | "YOUTH_CENTER" | "CAFE";
+type FilterType = "all" | "LIBRARY" | "LIFELONG_LEARNING" | "CAFE";
 
 type Coordinates = {
   lat: number;
@@ -51,8 +51,6 @@ const filterCategories: Array<{ id: FilterType; label: string }> = [
   { id: "all", label: "전체" },
   { id: "LIBRARY", label: "도서관" },
   { id: "LIFELONG_LEARNING", label: "평생학습관" },
-  { id: "FIFTY_PLUS", label: "50플러스" },
-  { id: "YOUTH_CENTER", label: "청년센터" },
   { id: "CAFE", label: "카페" },
 ];
 
@@ -244,37 +242,39 @@ export default function LearningSpacesPage() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="장소추천" />
 
-      <main className="flex-1 px-8 py-12">
+      <main className="flex-1 px-3 py-8 sm:px-5 lg:px-6 lg:py-10">
         <div className="max-w-[1280px] mx-auto w-full">
-          <div className="grid gap-6 lg:grid-cols-[400px_minmax(0,1fr)] min-h-[780px]">
-            <section className="bg-white rounded-[28px] border border-[#E5E0D8] shadow-sm overflow-y-auto">
-              <div className="p-8">
+          <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:h-[min(820px,calc(100vh-170px))] lg:items-stretch">
+            <section className="bg-white rounded-[28px] border border-[#E5E0D8] shadow-sm overflow-hidden min-h-[420px] lg:h-full">
+              <div className="flex h-full min-h-0 flex-col p-5 sm:p-6 lg:p-7">
                 <div className="mb-6">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div>
-                      <h1 className="text-[24px] font-[800] text-[#2C2C2C] mb-2">📍 내 주변 학습 공간</h1>
-                      <p className="text-[14px] text-[#777777] leading-relaxed">
+                  <div className="mb-4">
+                    <div className="min-w-0">
+                      <h1 className="text-[22px] sm:text-[24px] font-[800] text-[#2C2C2C] mb-2 leading-tight">📍 내 주변 학습 공간</h1>
+                      <p className="text-[13px] sm:text-[14px] text-[#777777] leading-relaxed break-keep">
                         현재 위치를 기준으로 주변 학습 공간을 지도와 목록으로 확인해 보세요.
                       </p>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={locateUser}
-                      className="shrink-0 px-3 py-2 rounded-xl border border-[#D8D1C5] bg-white text-[12px] font-[600] text-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors flex items-center gap-1.5"
-                    >
-                      <RefreshCcw className={`w-3.5 h-3.5 ${isLocating ? "animate-spin" : ""}`} />
-                      위치 새로고침
-                    </button>
                   </div>
 
-                  <div className="bg-[#F8F6F1] border border-[#E5E0D8] rounded-2xl p-4 flex items-start gap-3">
-                    <LocateFixed className="w-5 h-5 text-[#3B6B4A] mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-[14px] font-[700] text-[#2C2C2C] mb-1">
+                  <div className="bg-[#F8F6F1] border border-[#E5E0D8] rounded-2xl px-4 py-3 flex items-start gap-3">
+                    <LocateFixed className="w-[18px] h-[18px] text-[#3B6B4A] mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-[700] text-[#2C2C2C] mb-1 leading-tight">
                         {coordinates?.label ?? "위치 확인 중"} · 반경 {radius / 1000}km
                       </p>
-                      <p className="text-[13px] text-[#777777]">{locationMessage}</p>
+                      <p className="text-[12px] text-[#777777] leading-[1.45] break-keep">{locationMessage}</p>
+
+                      <div className="mt-2.5 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={locateUser}
+                          className="shrink-0 px-3 py-1.5 rounded-xl border border-[#D8D1C5] bg-white text-[11px] font-[600] text-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors flex items-center gap-1.5"
+                        >
+                          <RefreshCcw className={`w-3 h-3 ${isLocating ? "animate-spin" : ""}`} />
+                          위치 새로고침
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -287,10 +287,10 @@ export default function LearningSpacesPage() {
                         key={option.value}
                         type="button"
                         onClick={() => setRadius(option.value)}
-                        className={`px-4 py-2 rounded-full text-[13px] font-[600] transition-all ${
-                          radius === option.value
-                            ? "bg-[#3B6B4A] text-white"
-                            : "bg-white text-[#2C2C2C] border border-[#E5E0D8] hover:border-[#3B6B4A]"
+                          className={`px-3.5 py-2 rounded-full text-[13px] font-[600] transition-all whitespace-nowrap ${
+                            radius === option.value
+                              ? "bg-[#3B6B4A] text-white"
+                              : "bg-white text-[#2C2C2C] border border-[#E5E0D8] hover:border-[#3B6B4A]"
                         }`}
                       >
                         {option.label}
@@ -299,7 +299,8 @@ export default function LearningSpacesPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-2">
                   {filterCategories.map((category) => (
                     <CategoryChip
                       key={category.id}
@@ -308,8 +309,17 @@ export default function LearningSpacesPage() {
                       onClick={() => setActiveFilter(category.id)}
                     />
                   ))}
+                  </div>
                 </div>
 
+                {!error && !isLoading ? (
+                  <div className="mb-4 flex items-center justify-between gap-3 text-[12px] text-[#8A8A8A]">
+                    <span>내 주변 학습 공간 {filteredSpaces.length}곳</span>
+                    <span className="hidden lg:block">목록은 내부 스크롤로 볼 수 있어요.</span>
+                  </div>
+                ) : null}
+
+                <div className="flex-1 min-h-0">
                 {error ? (
                   <div className="bg-[#FFF4F4] border border-[#F0C7C7] rounded-2xl p-5 text-[#8B3A3A] flex gap-3">
                     <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -327,7 +337,8 @@ export default function LearningSpacesPage() {
                     선택한 조건에 맞는 장소가 아직 없어요. 반경을 넓혀서 다시 확인해 보세요.
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="h-full min-h-0 overflow-y-auto pr-1 sm:pr-2">
+                    <div className="space-y-3">
                     {filteredSpaces.map((space) => (
                       <div key={space.id} ref={(node) => { cardRefs.current[space.id] = node; }}>
                         <LearningSpaceCard
@@ -337,12 +348,14 @@ export default function LearningSpacesPage() {
                         />
                       </div>
                     ))}
+                    </div>
                   </div>
                 )}
+                </div>
               </div>
             </section>
 
-            <section className="relative rounded-[28px] overflow-hidden border border-[#E5E0D8] shadow-sm bg-white min-h-[780px]">
+            <section className="relative rounded-[28px] overflow-hidden border border-[#E5E0D8] shadow-sm bg-white min-h-[420px] h-[420px] sm:h-[520px] lg:h-full">
               <LearningSpaceMap
                 pins={mapPins}
                 userLocation={coordinates}
@@ -372,7 +385,7 @@ function CategoryChip({ label, isActive, onClick }: { label: string; isActive: b
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 rounded-full text-[13px] font-[600] whitespace-nowrap transition-all ${
+      className={`shrink-0 px-3.5 py-2 rounded-full text-[13px] font-[600] whitespace-nowrap transition-all ${
         isActive ? "bg-[#3B6B4A] text-white" : "bg-white text-[#2C2C2C] border border-[#E5E0D8] hover:border-[#3B6B4A]"
       }`}
     >
@@ -395,13 +408,13 @@ function LearningSpaceCard({
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl p-5 transition-all cursor-pointer ${
+      className={`rounded-2xl p-4 transition-all cursor-pointer ${
         isExpanded ? "bg-[#FCFBF8] border-2 border-[#3B6B4A] shadow-md" : "bg-white border border-[#E5E0D8] hover:border-[#3B6B4A]"
       }`}
     >
       <div className="flex items-start justify-between gap-3 mb-2">
         <div>
-          <h3 className="text-[16px] font-[800] text-[#2C2C2C]">{space.name}</h3>
+          <h3 className="text-[15px] sm:text-[16px] font-[800] text-[#2C2C2C]">{space.name}</h3>
           <p className="text-[12px] text-[#8A8A8A] mt-1">{space.description}</p>
         </div>
         <span className={`px-2.5 py-1 rounded-full text-[11px] font-[600] whitespace-nowrap ${categoryBgColor}`}>
@@ -409,7 +422,7 @@ function LearningSpaceCard({
         </span>
       </div>
 
-      <p className="text-[13px] text-[#777777] mb-3">거리: {space.distanceLabel} | 운영: {space.hoursLabel}</p>
+      <p className="text-[13px] text-[#777777] mb-3 leading-relaxed">거리: {space.distanceLabel} | 운영: {space.hoursLabel}</p>
 
       <div className="flex items-center gap-3 min-h-5">
         {space.hasWifi ? <div className="flex items-center gap-1 text-[#3B6B4A] text-[12px] font-[600]"><Wifi className="w-4 h-4" />와이파이</div> : null}
@@ -466,6 +479,11 @@ function LearningSpaceMap({
           {locationLabel}
         </div>
         <p className="text-[12px] text-[#777777]">반경 {radius / 1000}km 안의 추천 장소</p>
+      </div>
+
+      <div className="absolute bottom-5 right-5 z-[1000] hidden sm:flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-[12px] text-[#666666] shadow-sm backdrop-blur-sm">
+        <span className="font-[600] text-[#3B6B4A]">TIP</span>
+        <span>지도를 드래그해서 둘러보세요</span>
       </div>
 
       <MapContainer center={initialCenter} zoom={14} className="w-full h-full z-0" scrollWheelZoom={false}>
