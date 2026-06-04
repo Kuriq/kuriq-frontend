@@ -14,6 +14,9 @@ import LearningSpacesPage from "./pages/LearningSpacesPage";
 import NoteEditorPage from "./pages/NoteEditorPage";
 import LoadingRoadmapPage from "./pages/LoadingRoadmapPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import CommunityPage from "./pages/CommunityPage";
+import PostCreatePage from "./pages/PostCreatePage";
+import CommunityPostDetailPage from "./pages/CommunityPostDetailPage";
 
 // ── Protected Route Wrapper ──────────────────────────
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -35,6 +38,9 @@ export const router = createBrowserRouter([
   { path: "/auth", element: <AuthPage /> },
   { path: "/search", element: <SearchPage /> },
   { path: "/learning-spaces", element: <ProtectedRoute><LearningSpacesPage /></ProtectedRoute> },
+  { path: "/community", element: <ProtectedRoute><CommunityPage /></ProtectedRoute> },
+  { path: "/community/create", element: <ProtectedRoute><PostCreatePage /></ProtectedRoute> },
+  { path: "/community/:postId", element: <ProtectedRoute><CommunityPostDetailPage /></ProtectedRoute> },
   { path: "/ai-review-demo", element: <AIReviewNoteDemoPage /> },
 
   // Protected
