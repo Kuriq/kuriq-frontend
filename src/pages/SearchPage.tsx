@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
 import { searchCourses, type CourseSearchResult } from "../api/client";
@@ -22,6 +22,7 @@ export default function SearchPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
   const size = 20;
+  const hasHandledInitialFilterEffect = useRef(false);
 
   const fetchCourses = useCallback(async (pageNum = 0) => {
     setLoading(true);
@@ -59,11 +60,14 @@ export default function SearchPage() {
 
   // 필터 변경 시 즉시 검색 실행
   useEffect(() => {
-    if (platform || category) {
-      setPage(0);
-      fetchCourses(0);
+    if (!hasHandledInitialFilterEffect.current) {
+      hasHandledInitialFilterEffect.current = true;
+      return;
     }
-  }, [platform, category]);
+
+    setPage(0);
+    fetchCourses(0);
+  }, [platform, category, fetchCourses]);
 
   // 초기 로딩 시 전체 강좌 조회
   useEffect(() => {
