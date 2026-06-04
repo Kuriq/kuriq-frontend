@@ -88,19 +88,21 @@ export async function socialCallback(code: string, state?: string) {
 
 // ── Course Search ─────────────────────────────────────
 
+export interface CourseSearchItem {
+  id: string;
+  title: string;
+  platform: string;
+  institution: string;
+  category: string;
+  difficulty: string;
+  durationWeeks: number;
+  estimatedHours: number;
+  hasCertificate: boolean;
+  url: string;
+}
+
 export interface CourseSearchResult {
-  content: Array<{
-    id: string;
-    title: string;
-    platform: string;
-    institution: string;
-    category: string;
-    difficulty: string;
-    durationWeeks: number;
-    estimatedHours: number;
-    hasCertificate: boolean;
-    url: string;
-  }>;
+  content: CourseSearchItem[];
   totalElements: number;
   totalPages: number;
   currentPage: number;
@@ -126,6 +128,196 @@ export async function searchCourses(params: {
   if (params.page !== undefined) qs.set("page", String(params.page));
   if (params.size !== undefined) qs.set("size", String(params.size));
   return request<CourseSearchResult>(`/api/v1/courses/search?${qs}`);
+}
+
+// ── Course Reviews ─────────────────────────────────────
+
+export type CourseReviewPriorKnowledge = "BEGINNER" | "LITTLE" | "INTERMEDIATE" | "ADVANCED";
+export type CourseReviewDifficultyMatch = "EASY" | "FIT" | "HARD";
+
+export interface CourseReviewSummary {
+  averageRating: number;
+  reviewCount: number;
+}
+
+export interface CourseReviewItem {
+  id: string;
+  authorId: string;
+  authorName: string;
+  anonymous: boolean;
+  rating: number;
+  content: string | null;
+  priorKnowledge: CourseReviewPriorKnowledge | null;
+  difficultyMatch: CourseReviewDifficultyMatch | null;
+  likeCount: number;
+  likedByMe: boolean;
+  createdAt: string;
+}
+
+export interface CourseReviewPageResponse {
+  content: CourseReviewItem[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+}
+
+export interface CourseReviewLikeResponse {
+  liked: boolean;
+  likeCount: number;
+}
+
+export interface CourseReviewUpsertRequest {
+  rating: number;
+  content?: string;
+  anonymous?: boolean;
+  priorKnowledge?: CourseReviewPriorKnowledge | null;
+  difficultyMatch?: CourseReviewDifficultyMatch | null;
+}
+
+export async function getCourseReviewSummary(courseId: string) {
+  return request<CourseReviewSummary>(`/api/v1/courses/${courseId}/reviews/summary`);
+}
+
+export async function getCourseReviews(courseId: string, params: { page?: number; size?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.page !== undefined) qs.set("page", String(params.page));
+  if (params.size !== undefined) qs.set("size", String(params.size));
+  return request<CourseReviewPageResponse>(`/api/v1/courses/${courseId}/reviews?${qs.toString()}`);
+}
+
+export async function getMyCourseReview(courseId: string) {
+  return request<CourseReviewItem | undefined>(`/api/v1/courses/${courseId}/reviews/me`);
+}
+
+export async function createCourseReview(courseId: string, data: CourseReviewUpsertRequest) {
+  return request<CourseReviewItem>(`/api/v1/courses/${courseId}/reviews`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateMyCourseReview(courseId: string, data: CourseReviewUpsertRequest) {
+  return request<CourseReviewItem>(`/api/v1/courses/${courseId}/reviews/me`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteMyCourseReview(courseId: string) {
+  return request<void>(`/api/v1/courses/${courseId}/reviews/me`, {
+    method: "DELETE",
+  });
+}
+
+export async function toggleCourseReviewLike(reviewId: string) {
+  return request<CourseReviewLikeResponse>(`/api/v1/reviews/${reviewId}/like`, {
+    method: "POST",
+  });
+}
+
+// ── Community Posts ───────────────────────────────────
+
+export interface CommunityPostSummary {
+  id: string;
+  title: string;
+  authorName: string;
+  anonymous: boolean;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+}
+
+export interface CommunityPostComment {
+  id: string;
+  authorId: string;
+  authorName: string | null;
+  anonymous: boolean;
+  content: string;
+  isDeleted: boolean;
+  parentId: string | null;
+  createdAt: string;
+  replies: CommunityPostComment[];
+}
+
+export interface CommunityPostDetail {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  anonymous: boolean;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  likedByMe: boolean;
+  createdAt: string;
+  updatedAt: string;
+  comments: CommunityPostComment[];
+}
+
+export interface CommunityPostPageResponse {
+  content: CommunityPostSummary[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+}
+
+export interface CommunityLikeResponse {
+  liked: boolean;
+  likeCount: number;
+}
+
+export interface CommunityCreatePostRequest {
+  title: string;
+  content: string;
+  anonymous?: boolean;
+}
+
+export interface CommunityCreateCommentRequest {
+  content: string;
+  anonymous?: boolean;
+  parentId?: string | null;
+}
+
+export async function getCommunityPosts(params: {
+  sort?: "latest" | "views" | "popular";
+  page?: number;
+  size?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (params.sort) qs.set("sort", params.sort);
+  if (params.page !== undefined) qs.set("page", String(params.page));
+  if (params.size !== undefined) qs.set("size", String(params.size));
+  return request<CommunityPostPageResponse>(`/api/v1/posts?${qs.toString()}`);
+}
+
+export async function getCommunityPost(postId: string, options?: { increaseView?: boolean }) {
+  const qs = new URLSearchParams();
+  if (options?.increaseView !== undefined) qs.set("increaseView", String(options.increaseView));
+  return request<CommunityPostDetail>(`/api/v1/posts/${postId}${qs.toString() ? `?${qs.toString()}` : ""}`);
+}
+
+export async function createCommunityPost(data: CommunityCreatePostRequest) {
+  return request<CommunityPostSummary>("/api/v1/posts", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function toggleCommunityPostLike(postId: string) {
+  return request<CommunityLikeResponse>(`/api/v1/posts/${postId}/like`, {
+    method: "POST",
+  });
+}
+
+export async function createCommunityComment(postId: string, data: CommunityCreateCommentRequest) {
+  return request<CommunityPostComment>(`/api/v1/posts/${postId}/comments`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 // ── Study Spaces ──────────────────────────────────────
