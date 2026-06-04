@@ -245,7 +245,7 @@ export default function LearningSpacesPage() {
 
       <main className="flex-1 px-3 py-8 sm:px-5 lg:px-6 lg:py-10">
         <div className="max-w-[1280px] mx-auto w-full">
-          <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:h-[min(820px,calc(100vh-170px))] lg:items-stretch">
+          <div className="learning-spaces-layout grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-stretch">
             <section className="bg-white rounded-[28px] border border-[#E5E0D8] shadow-sm overflow-hidden min-h-[420px] lg:h-full">
               <div className="flex h-full min-h-0 flex-col p-5 sm:p-6 lg:p-7">
                 <div className="mb-6">
@@ -376,6 +376,24 @@ export default function LearningSpacesPage() {
       <style>{`
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @media (min-width: 1024px) {
+          .learning-spaces-layout {
+            height: min(820px, calc(100vh - 170px));
+          }
+        }
+
+        @media (min-width: 1440px) and (min-height: 900px) {
+          .learning-spaces-layout {
+            height: min(920px, calc(100vh - 150px));
+          }
+        }
+
+        @media (min-width: 1800px) and (min-height: 1000px) {
+          .learning-spaces-layout {
+            height: min(1040px, calc(100vh - 140px));
+          }
+        }
       `}</style>
     </div>
   );
