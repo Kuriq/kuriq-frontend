@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse, completeItem, uncompleteItem } from "../api/client";
+import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse, completeItem, uncompleteItem, getRecommendations, type NextCourse } from "../api/client";
 import kuriWink from "../assets/images/kuri-wink.png";
 import kuriSuccess from "../assets/images/kuri-success.png";
 import { getPlatformLabel } from "../utils/platform";
@@ -13,7 +13,11 @@ export default function DashboardPage() {
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+<<<<<<< Updated upstream
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+=======
+  const [recommendations, setRecommendations] = useState<NextCourse[]>([]);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +54,14 @@ export default function DashboardPage() {
           setRoadmap(data);
           const idx = data.weeks.findIndex((w) => w.weekNumber === data.currentWeek);
           setCurrentWeekIndex(idx >= 0 ? idx : 0);
+
+          try {
+            const recs = await getRecommendations();
+            if (!cancelled) setRecommendations(recs ?? []);
+          } catch {
+            // 추천 실패해도 대시보드는 정상 표시
+          }
+
           setLoading(false);
         }
       } catch {
@@ -371,6 +383,44 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
+
+              {/* 다음 추천 강좌 */}
+              {recommendations.length > 0 && (
+                <div className="mt-4">
+                  <h2 className="font-bold mb-3" style={{ color: '#2C2C2C', fontSize: '16px' }}>
+                    🎯 큐리의 다음 추천
+                  </h2>
+                  <div className="space-y-3">
+                    {recommendations.map((rec) => (
+                      <div
+                        key={rec.courseId}
+                        className="bg-white rounded-xl p-4"
+                        style={{ border: '1px solid #E5E0D8' }}
+                      >
+                        <p className="text-sm font-bold mb-1" style={{ color: '#2C2C2C' }}>
+                          {rec.title}
+                        </p>
+                        <p className="text-xs mb-2" style={{ color: '#777777' }}>
+                          {rec.institution}
+                        </p>
+                        <p className="text-xs mb-3" style={{ color: '#3B6B4A' }}>
+                          {rec.message}
+                        </p>
+                        
+                        <a
+                          href={rec.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                          style={{ backgroundColor: '#3B6B4A', color: 'white' }}
+                        >
+                          강좌 보기 →
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

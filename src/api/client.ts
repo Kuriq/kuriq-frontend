@@ -752,3 +752,22 @@ export async function uncompleteItem(roadmapItemId: string) {
     method: "DELETE",
   });
 }
+
+// ── Recommendations ───────────────────────────────────
+
+export interface NextCourse {
+  courseId: string;
+  title: string;
+  institution: string;
+  platform: string;
+  category: string;
+  difficulty: string | null;
+  estimatedHours: number | null;
+  url: string;
+  hasCertificate: boolean;
+  message: string;
+}
+
+export async function getRecommendations() {
+  return request<NextCourse[]>("/api/v1/users/me/recommendations");
+}
