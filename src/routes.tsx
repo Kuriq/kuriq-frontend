@@ -24,7 +24,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // ── Route Definitions ────────────────────────────────
 // Public routes (로그인 없이 접근 가능)
-//   /, /auth, /search, /learning-spaces, /ai-review-demo
+//   /, /auth, /search, /ai-review-demo
 // Protected routes (로그인 필요)
 //   /roadmap, /roadmap-result, /loading-roadmap, /dashboard,
 //   /mypage, /notifications, /quiz, /note-editor
@@ -34,7 +34,7 @@ export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
   { path: "/auth", element: <AuthPage /> },
   { path: "/search", element: <SearchPage /> },
-  { path: "/learning-spaces", element: <LearningSpacesPage /> },
+  { path: "/learning-spaces", element: <ProtectedRoute><LearningSpacesPage /></ProtectedRoute> },
   { path: "/ai-review-demo", element: <AIReviewNoteDemoPage /> },
 
   // Protected
