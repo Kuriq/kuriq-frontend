@@ -8,6 +8,7 @@ export default function PostCreatePage() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -28,7 +29,7 @@ export default function PostCreatePage() {
       setSubmitting(true);
       setError(null);
       setNeedsLogin(false);
-      const created = await createCommunityPost({ title: trimmedTitle, content: trimmedContent });
+      const created = await createCommunityPost({ title: trimmedTitle, content: trimmedContent, anonymous });
       navigate(`/community/${created.id}`);
     } catch (err) {
       const message = getFriendlyCommunityErrorMessage(
@@ -49,7 +50,11 @@ export default function PostCreatePage() {
 
       <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[860px]">
-          <h1 className="mb-6 text-[26px] font-[800] text-[#2C2C2C]">게시글 작성</h1>
+          <div className="mb-6 rounded-[24px] border border-[#E5E0D8] bg-white p-6 shadow-sm sm:p-7">
+            <p className="mb-2 text-[12px] font-[700] tracking-[0.08em] text-[#3B6B4A]">WRITE POST</p>
+            <h1 className="mb-2 text-[26px] font-[800] text-[#2C2C2C]">게시글 작성</h1>
+            <p className="text-[14px] text-[#777777]">자유게시판에 질문이나 학습 경험을 남겨보세요.</p>
+          </div>
 
           <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-6 sm:p-8">
             <div className="mb-6 rounded-[14px] bg-[#F8F6F1] px-4 py-3 text-[14px] text-[#666666]">
@@ -77,6 +82,16 @@ export default function PostCreatePage() {
                 className="min-h-[320px] w-full resize-none rounded-[14px] border border-[#E5E0D8] px-4 py-4 text-[15px] leading-relaxed text-[#2C2C2C] outline-none focus:border-[#3B6B4A]"
               />
             </div>
+
+            <label className="mt-5 inline-flex items-center gap-2 text-[13px] text-[#666666]">
+              <input
+                type="checkbox"
+                checked={anonymous}
+                onChange={(event) => setAnonymous(event.target.checked)}
+                className="h-4 w-4 rounded border-[#D8D0C5] text-[#3B6B4A] focus:ring-[#3B6B4A]"
+              />
+              익명으로 게시글 작성하기
+            </label>
 
             {error ? (
               <div className="mt-4 flex flex-col items-start gap-3 rounded-[14px] bg-[#FFF4F6] px-4 py-3 text-[13px] text-[#C75B7A]">

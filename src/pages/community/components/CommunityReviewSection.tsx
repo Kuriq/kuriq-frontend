@@ -231,11 +231,12 @@ export function CommunityReviewSection() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-5 sm:p-6">
+      <div className="rounded-[24px] border border-[#E5E0D8] bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
+            <p className="mb-2 text-[12px] font-[700] tracking-[0.08em] text-[#3B6B4A]">COURSE REVIEW</p>
             <h2 className="mb-2 text-[24px] font-[800] text-[#2C2C2C]">강좌 리뷰</h2>
-            <p className="text-[14px] text-[#777777]">강좌를 검색해 리뷰를 확인하고, 이수한 강좌라면 후기를 남겨보세요.</p>
+            <p className="text-[14px] text-[#777777]">강좌를 검색해 리뷰를 확인하고, 수강 경험을 자유롭게 남겨보세요.</p>
           </div>
           {selectedCourse ? (
             <button
@@ -294,7 +295,7 @@ export function CommunityReviewSection() {
           description="검색창에서 강좌를 찾으면 해당 강좌의 리뷰 목록과 작성 폼이 열려요."
         />
       ) : reviewLoading ? (
-        <div className="rounded-[18px] border border-[#E5E0D8] bg-white px-6 py-12 text-center text-[15px] text-[#777777]">
+        <div className="rounded-[18px] border border-[#E5E0D8] bg-white px-6 py-12 text-center text-[15px] text-[#777777] shadow-sm">
           리뷰를 불러오는 중이에요...
         </div>
       ) : reviewError ? (
@@ -328,7 +329,7 @@ export function CommunityReviewSection() {
                 <span className="text-[13px] text-[#666666]">수강생 평점을 기준으로 표시돼요.</span>
               </div>
               <p className="text-[13px] leading-[1.7] text-[#777777]">
-                리뷰는 최신순으로 보여주고, 좋아요 수는 다른 수강생의 공감을 의미해요. 이수한 강좌라면 직접 리뷰를 남길 수 있어요.
+                리뷰는 최신순으로 보여주고, 좋아요 수는 다른 수강생의 공감을 의미해요. 수강 경험이 있다면 직접 리뷰를 남길 수 있어요.
               </p>
             </div>
           </div>

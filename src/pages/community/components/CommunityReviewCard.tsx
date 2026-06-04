@@ -28,6 +28,7 @@ export function CommunityReviewCard({
         <div>
           <div className="mb-2 flex items-center gap-2">
             <p className="text-[15px] font-[800] text-[#2C2C2C]">{review.authorName}</p>
+            {review.anonymous ? <span className="rounded-full bg-[#F8F6F1] px-2.5 py-1 text-[11px] font-[700] text-[#7A6F62]">익명</span> : null}
             {isMine ? <span className="rounded-full bg-[#FFF3EB] px-2.5 py-1 text-[11px] font-[700] text-[#E07A3F]">내 리뷰</span> : null}
           </div>
           <div className="flex items-center gap-2">

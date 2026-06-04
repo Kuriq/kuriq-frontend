@@ -21,7 +21,7 @@ export default function CommunityPostDetailPage() {
   const [likeError, setLikeError] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
 
-  const loadPost = useCallback(async () => {
+  const loadPost = useCallback(async (options?: { increaseView?: boolean }) => {
     if (!postId) return;
 
     setLoading(true);
@@ -29,7 +29,7 @@ export default function CommunityPostDetailPage() {
     setNeedsLogin(false);
 
     try {
-      const data = await getCommunityPost(postId);
+      const data = await getCommunityPost(postId, options);
       setPost(data);
     } catch (err) {
       const message = getFriendlyCommunityErrorMessage(err, "게시글을 불러오지 못했어요.");
@@ -42,7 +42,7 @@ export default function CommunityPostDetailPage() {
   }, [postId]);
 
   useEffect(() => {
-    void loadPost();
+    void loadPost({ increaseView: true });
   }, [loadPost]);
 
   const handleToggleLike = async () => {
@@ -65,7 +65,7 @@ export default function CommunityPostDetailPage() {
     }
   };
 
-  const handleCreateComment = async (content: string) => {
+  const handleCreateComment = async ({ content, anonymous }: { content: string; anonymous: boolean }) => {
     if (!postId) return;
     if (!isAuthenticated) {
       navigate("/auth");
@@ -74,8 +74,8 @@ export default function CommunityPostDetailPage() {
 
     try {
       setCommentError(null);
-      await createCommunityComment(postId, { content });
-      await loadPost();
+      await createCommunityComment(postId, { content, anonymous });
+      await loadPost({ increaseView: false });
     } catch (err) {
       const message = getFriendlyCommunityErrorMessage(err, "댓글 등록에 실패했어요.");
       setCommentError(message);
@@ -103,13 +103,16 @@ export default function CommunityPostDetailPage() {
             />
           ) : (
             <div className="space-y-6">
-              <article className="rounded-[20px] border border-[#E5E0D8] bg-white p-6 sm:p-8">
+              <article className="rounded-[24px] border border-[#E5E0D8] bg-white p-6 shadow-sm sm:p-8">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-[#E8F0EA] px-3 py-1 text-[11px] font-[700] text-[#3B6B4A] whitespace-nowrap">자유게시판</span>
+                      {post.anonymous ? <span className="rounded-full bg-[#F8F6F1] px-3 py-1 text-[11px] font-[700] text-[#7A6F62]">익명</span> : null}
+                    </div>
                     <h1 className="mb-2 text-[28px] font-[800] leading-tight text-[#2C2C2C]">{post.title}</h1>
                     <p className="text-[14px] text-[#777777]">{post.authorName} · {formatRelativeKoreanDate(post.createdAt)}</p>
                   </div>
-                  <span className="rounded-full bg-[#E8F0EA] px-3 py-1 text-[12px] font-[700] text-[#3B6B4A] whitespace-nowrap">자유게시판</span>
                 </div>
 
                 <div className="mb-6 whitespace-pre-wrap text-[15px] leading-[1.8] text-[#444444]">{post.content}</div>

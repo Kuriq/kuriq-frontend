@@ -24,6 +24,7 @@ function getInitialForm(review?: CourseReviewItem | null): CourseReviewUpsertReq
   return {
     rating: review?.rating ?? 0,
     content: review?.content ?? "",
+    anonymous: review?.anonymous ?? false,
     priorKnowledge: review?.priorKnowledge ?? null,
     difficultyMatch: review?.difficultyMatch ?? null,
   };
@@ -57,7 +58,7 @@ export function CommunityReviewComposer({
   const contentLength = form.content?.length ?? 0;
 
   const helperText = useMemo(
-    () => (isEditMode ? `${courseTitle}에 남긴 내 리뷰를 수정할 수 있어요.` : "강좌를 이수한 사용자만 리뷰를 작성할 수 있어요."),
+    () => (isEditMode ? `${courseTitle}에 남긴 내 리뷰를 수정할 수 있어요.` : "수강 경험이 있다면 자유롭게 리뷰를 남길 수 있어요."),
     [courseTitle, isEditMode]
   );
 
@@ -120,6 +121,16 @@ export function CommunityReviewComposer({
           />
           <p className="mt-2 text-right text-[12px] text-[#999999]">{contentLength}/1000</p>
         </div>
+
+        <label className="inline-flex items-center gap-2 text-[13px] text-[#666666]">
+          <input
+            type="checkbox"
+            checked={Boolean(form.anonymous)}
+            onChange={(event) => setForm((prev) => ({ ...prev, anonymous: event.target.checked }))}
+            className="h-4 w-4 rounded border-[#D8D0C5] text-[#3B6B4A] focus:ring-[#3B6B4A]"
+          />
+          익명으로 리뷰 남기기
+        </label>
 
         {error ? <p className="rounded-[12px] bg-[#FFF4F6] px-4 py-3 text-[13px] text-[#C75B7A]">{error}</p> : null}
 

@@ -4,11 +4,12 @@ import { formatRelativeKoreanDate } from "../utils";
 function CommentItem({ comment, depth = 0 }: { comment: CommunityCommentItem; depth?: number }) {
   return (
     <div className={`${depth > 0 ? "ml-6 border-l border-[#EEE7DD] pl-4" : ""}`}>
-      <div className="rounded-[14px] bg-[#FCFBF8] border border-[#EEE7DD] px-4 py-3">
-        <div className="mb-1 flex items-center gap-2 text-[13px]">
-          <span className="font-[700] text-[#2C2C2C]">{comment.authorName ?? "삭제된 사용자"}</span>
-          <span className="text-[#999999]">{formatRelativeKoreanDate(comment.createdAt)}</span>
-        </div>
+        <div className="rounded-[14px] bg-[#FCFBF8] border border-[#EEE7DD] px-4 py-3">
+          <div className="mb-1 flex items-center gap-2 text-[13px]">
+            <span className="font-[700] text-[#2C2C2C]">{comment.authorName ?? "삭제된 사용자"}</span>
+            {comment.anonymous && !comment.isDeleted ? <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-[700] text-[#7A6F62]">익명</span> : null}
+            <span className="text-[#999999]">{formatRelativeKoreanDate(comment.createdAt)}</span>
+          </div>
         <p className={`text-[14px] leading-relaxed ${comment.isDeleted ? "text-[#AAAAAA] italic" : "text-[#555555]"}`}>
           {comment.content}
         </p>

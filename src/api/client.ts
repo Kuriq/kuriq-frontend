@@ -144,6 +144,7 @@ export interface CourseReviewItem {
   id: string;
   authorId: string;
   authorName: string;
+  anonymous: boolean;
   rating: number;
   content: string | null;
   priorKnowledge: CourseReviewPriorKnowledge | null;
@@ -169,6 +170,7 @@ export interface CourseReviewLikeResponse {
 export interface CourseReviewUpsertRequest {
   rating: number;
   content?: string;
+  anonymous?: boolean;
   priorKnowledge?: CourseReviewPriorKnowledge | null;
   difficultyMatch?: CourseReviewDifficultyMatch | null;
 }
@@ -220,6 +222,7 @@ export interface CommunityPostSummary {
   id: string;
   title: string;
   authorName: string;
+  anonymous: boolean;
   viewCount: number;
   likeCount: number;
   commentCount: number;
@@ -230,6 +233,7 @@ export interface CommunityPostComment {
   id: string;
   authorId: string;
   authorName: string | null;
+  anonymous: boolean;
   content: string;
   isDeleted: boolean;
   parentId: string | null;
@@ -243,6 +247,7 @@ export interface CommunityPostDetail {
   content: string;
   authorId: string;
   authorName: string;
+  anonymous: boolean;
   viewCount: number;
   likeCount: number;
   commentCount: number;
@@ -268,15 +273,17 @@ export interface CommunityLikeResponse {
 export interface CommunityCreatePostRequest {
   title: string;
   content: string;
+  anonymous?: boolean;
 }
 
 export interface CommunityCreateCommentRequest {
   content: string;
+  anonymous?: boolean;
   parentId?: string | null;
 }
 
 export async function getCommunityPosts(params: {
-  sort?: "latest" | "comments";
+  sort?: "latest" | "views" | "popular";
   page?: number;
   size?: number;
 }) {
@@ -287,8 +294,10 @@ export async function getCommunityPosts(params: {
   return request<CommunityPostPageResponse>(`/api/v1/posts?${qs.toString()}`);
 }
 
-export async function getCommunityPost(postId: string) {
-  return request<CommunityPostDetail>(`/api/v1/posts/${postId}`);
+export async function getCommunityPost(postId: string, options?: { increaseView?: boolean }) {
+  const qs = new URLSearchParams();
+  if (options?.increaseView !== undefined) qs.set("increaseView", String(options.increaseView));
+  return request<CommunityPostDetail>(`/api/v1/posts/${postId}${qs.toString() ? `?${qs.toString()}` : ""}`);
 }
 
 export async function createCommunityPost(data: CommunityCreatePostRequest) {
