@@ -177,7 +177,8 @@ export default function LearningSpacesPage() {
       setError(null);
 
       try {
-        const data = await getNearbySpaces(coordinates.lat, coordinates.lng, effectiveRadius);
+        const selectedType = activeFilter === "all" ? undefined : activeFilter;
+        const data = await getNearbySpaces(coordinates.lat, coordinates.lng, effectiveRadius, selectedType);
         if (cancelled) return;
         setSpaces(data);
         setExpandedCardId((prev) => (data.some((space) => space.id === prev) ? prev : data[0]?.id ?? null));
@@ -196,7 +197,7 @@ export default function LearningSpacesPage() {
     return () => {
       cancelled = true;
     };
-  }, [coordinates, radius]);
+  }, [activeFilter, coordinates, radius]);
 
   const uiSpaces = useMemo<UiSpace[]>(() => {
     return spaces.map((space) => {

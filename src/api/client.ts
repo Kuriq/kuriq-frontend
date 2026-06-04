@@ -144,8 +144,10 @@ export interface StudySpace {
   distanceMeters: number;
 }
 
-export async function getNearbySpaces(lat: number, lng: number, radius = 2000) {
-  return request<StudySpace[]>(`/api/v1/spaces/nearby?lat=${lat}&lng=${lng}&radius=${radius}`);
+export async function getNearbySpaces(lat: number, lng: number, radius = 2000, type?: string) {
+  const qs = new URLSearchParams({ lat: String(lat), lng: String(lng), radius: String(radius) });
+  if (type && type !== "all") qs.set("type", type);
+  return request<StudySpace[]>(`/api/v1/spaces/nearby?${qs.toString()}`);
 }
 
 // ── User Profile ──────────────────────────────────────
