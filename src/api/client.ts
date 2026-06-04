@@ -137,10 +137,10 @@ export interface StudySpace {
   address: string;
   latitude: number;
   longitude: number;
-  operatingHours: string;
-  phone: string;
-  hasWifi: boolean;
-  hasPowerOutlet: boolean;
+  operatingHours: string | null;
+  phone: string | null;
+  hasWifi: boolean | null;
+  hasPowerOutlet: boolean | null;
   distanceMeters: number;
 }
 
