@@ -109,7 +109,7 @@ export default function NotificationSettingsPage() {
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-3">
               <h1 className="text-[28px] font-[800] text-[#2C2C2C]">알림 설정</h1>
-              <OwlMascot size={40} />
+              <OwlMascot size={40} variant="winking" />
             </div>
             <p className="text-[14px] text-[#777777]">학습 흐름을 놓치지 않게 큐리가 제때 알려드릴게요.</p>
           </div>

@@ -15,7 +15,7 @@ export function OwlMascot({ size = 96, variant = "normal" }: OwlMascotProps) {
       alt="큐리 마스코트"
       width={size}
       height={size}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, objectFit: "contain", display: "block", flexShrink: 0 }}
     />
   );
 }
