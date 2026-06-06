@@ -453,6 +453,19 @@ export async function getLearningHistory(page = 0, size = 20) {
   return request<LearningHistoryItem[]>(`/api/v1/users/me/history?page=${page}&size=${size}`);
 }
 
+export interface UserBadge {
+  id: string | null;
+  badgeType: string;
+  displayName: string;
+  description: string;
+  acquired: boolean;
+  acquiredAt: string | null;
+}
+
+export async function getMyBadges() {
+  return request<UserBadge[]>("/api/v1/users/me/badges");
+}
+
 // ── Roadmap ───────────────────────────────────────────
 
 export interface RoadmapCourse {

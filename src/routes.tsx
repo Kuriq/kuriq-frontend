@@ -17,6 +17,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import CommunityPage from "./pages/CommunityPage";
 import PostCreatePage from "./pages/PostCreatePage";
 import CommunityPostDetailPage from "./pages/CommunityPostDetailPage";
+import BadgesPage from "./pages/BadgesPage";
 
 // ── Protected Route Wrapper ──────────────────────────
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
   { path: "/loading-roadmap", element: <ProtectedRoute><LoadingRoadmapPage /></ProtectedRoute> },
   { path: "/dashboard", element: <ProtectedRoute><DashboardPage /></ProtectedRoute> },
   { path: "/mypage", element: <ProtectedRoute><MyPage /></ProtectedRoute> },
+  { path: "/badges", element: <ProtectedRoute><BadgesPage /></ProtectedRoute> },
   { path: "/notifications", element: <ProtectedRoute><NotificationSettingsPage /></ProtectedRoute> },
   { path: "/quiz", element: <ProtectedRoute><QuizPage /></ProtectedRoute> },
   { path: "/note-editor", element: <ProtectedRoute><NoteEditorPage /></ProtectedRoute> },
