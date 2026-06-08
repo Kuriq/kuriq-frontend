@@ -3,7 +3,15 @@ import { createRoot } from "react-dom/client"
 import "./styles/index.css"
 import App from "./App.jsx"
 
-// localStorage.removeItem 감지 — accessToken 삭제 위치 추적
+// localStorage 감시 — accessToken 저장/삭제 위치 추적
+const originalSetItem = localStorage.setItem.bind(localStorage);
+localStorage.setItem = function(key, value) {
+  if (key === 'accessToken') {
+    console.log('✅ accessToken 저장됨!', value?.substring(0, 20), new Error().stack);
+  }
+  return originalSetItem(key, value);
+};
+
 const originalRemoveItem = localStorage.removeItem.bind(localStorage);
 localStorage.removeItem = function(key) {
   if (key === 'accessToken') {
