@@ -78,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [login]);
 
   const logout = useCallback(async () => {
+    console.error("🚨 logout 호출됨!", new Error().stack); // 어디서 호출됐는지 추적
     try {
       await apiLogout();
     } catch {
