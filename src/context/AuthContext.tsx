@@ -65,10 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await apiLogin(email, password);
-    localStorage.setItem("accessToken", res.accessToken);
-    setAccessToken(res.accessToken);
-    const profile = await getProfile();
+    localStorage.setItem("accessToken", res.accessToken); // 먼저 저장 → getProfile이 토큰 읽을 수 있음
+    const profile = await getProfile(); // localStorage에서 토큰 읽어서 호출
     setUser(profile);
+    setAccessToken(res.accessToken); // 마지막에 state 업데이트 → useEffect 재실행 방지
+    setIsLoading(false);
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string, ageGroup?: string) => {
