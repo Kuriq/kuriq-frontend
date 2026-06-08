@@ -39,8 +39,7 @@ type FocusTarget = {
   key: string;
 };
 
-const DEFAULT_RADIUS = 2000;
-const MAX_RADIUS = 10000;
+const SEARCH_RADIUS = 5000;
 const DEFAULT_COORDINATES: Coordinates = {
   lat: 37.4979,
   lng: 127.0276,
@@ -52,13 +51,6 @@ const filterCategories: Array<{ id: FilterType; label: string }> = [
   { id: "LIBRARY", label: "도서관" },
   { id: "LIFELONG_LEARNING", label: "평생학습관" },
   { id: "CAFE", label: "카페" },
-];
-
-const radiusOptions = [
-  { value: 1000, label: "1km" },
-  { value: 2000, label: "2km" },
-  { value: 5000, label: "5km" },
-  { value: 10000, label: "10km" },
 ];
 
 function createCurrentLocationIcon(imageSrc: string) {
@@ -120,7 +112,6 @@ function buildPlaceLink(space: StudySpace) {
 export default function LearningSpacesPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const [radius, setRadius] = useState(DEFAULT_RADIUS);
   const [spaces, setSpaces] = useState<StudySpace[]>([]);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [locationMessage, setLocationMessage] = useState("현재 위치를 확인하는 중이에요.");
@@ -170,22 +161,20 @@ export default function LearningSpacesPage() {
     if (!coordinates) return;
 
     let cancelled = false;
-    const effectiveRadius = Math.min(radius, MAX_RADIUS);
-
     const loadSpaces = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
         const selectedType = activeFilter === "all" ? undefined : activeFilter;
-        const data = await getNearbySpaces(coordinates.lat, coordinates.lng, effectiveRadius, selectedType);
+        const data = await getNearbySpaces(coordinates.lat, coordinates.lng, SEARCH_RADIUS, selectedType);
         if (cancelled) return;
         setSpaces(data);
         setExpandedCardId((prev) => (data.some((space) => space.id === prev) ? prev : data[0]?.id ?? null));
       } catch (err) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : "학습 공간을 불러오지 못했어요.";
-        setError(message === "UNAUTHORIZED" ? "로그인 후 장소 추천을 이용할 수 있어요." : message);
+        setError(message === "UNAUTHORIZED" ? "로그인 후 장소 탐색을 이용할 수 있어요." : message);
         setSpaces([]);
         setExpandedCardId(null);
       } finally {
@@ -197,7 +186,7 @@ export default function LearningSpacesPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeFilter, coordinates, radius]);
+  }, [activeFilter, coordinates]);
 
   const uiSpaces = useMemo<UiSpace[]>(() => {
     return spaces.map((space) => {
@@ -241,7 +230,7 @@ export default function LearningSpacesPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-      <Navigation activeMenu="장소추천" />
+      <Navigation activeMenu="장소 탐색" />
 
       <main className="flex-1 px-3 py-8 sm:px-5 lg:px-6 lg:py-10">
         <div className="max-w-[1280px] mx-auto w-full">
@@ -258,45 +247,24 @@ export default function LearningSpacesPage() {
                     </div>
                   </div>
 
-                  <div className="bg-[#F8F6F1] border border-[#E5E0D8] rounded-2xl px-4 py-3 flex items-start gap-3">
-                    <LocateFixed className="w-[18px] h-[18px] text-[#3B6B4A] mt-0.5 shrink-0" />
+                  <div className="bg-[#F8F6F1] border border-[#E5E0D8] rounded-2xl px-4 py-2.5 flex items-center gap-3">
+                    <LocateFixed className="w-[18px] h-[18px] text-[#3B6B4A] shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-[700] text-[#2C2C2C] mb-1 leading-tight">
-                        {coordinates?.label ?? "위치 확인 중"} · 반경 {radius / 1000}km
+                      <p className="text-[13px] font-[700] text-[#2C2C2C] leading-tight">
+                        {coordinates?.label ?? "위치 확인 중"} · 반경 5km
                       </p>
-                      <p className="text-[12px] text-[#777777] leading-[1.45] break-keep">{locationMessage}</p>
-
-                      <div className="mt-2.5 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={locateUser}
-                          className="shrink-0 px-3 py-1.5 rounded-xl border border-[#D8D1C5] bg-white text-[11px] font-[600] text-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors flex items-center gap-1.5"
-                        >
-                          <RefreshCcw className={`w-3 h-3 ${isLocating ? "animate-spin" : ""}`} />
-                          위치 새로고침
-                        </button>
-                      </div>
+                      <p className="mt-0.5 text-[12px] text-[#777777] leading-[1.35] break-keep">{locationMessage}</p>
                     </div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-[13px] font-[700] text-[#5B5B5B] mb-2">검색 반경</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {radiusOptions.map((option) => (
+                    <div className="shrink-0">
                       <button
-                        key={option.value}
                         type="button"
-                        onClick={() => setRadius(option.value)}
-                          className={`px-3.5 py-2 rounded-full text-[13px] font-[600] transition-all whitespace-nowrap ${
-                            radius === option.value
-                              ? "bg-[#3B6B4A] text-white"
-                              : "bg-white text-[#2C2C2C] border border-[#E5E0D8] hover:border-[#3B6B4A]"
-                        }`}
+                        onClick={locateUser}
+                        className="shrink-0 px-3 py-1.5 rounded-xl border border-[#D8D1C5] bg-white text-[11px] font-[600] text-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors flex items-center gap-1.5"
                       >
-                        {option.label}
+                        <RefreshCcw className={`w-3 h-3 ${isLocating ? "animate-spin" : ""}`} />
+                        위치 새로고침
                       </button>
-                    ))}
+                    </div>
                   </div>
                 </div>
 
@@ -335,7 +303,7 @@ export default function LearningSpacesPage() {
                   </div>
                 ) : filteredSpaces.length === 0 ? (
                   <div className="bg-[#F8F6F1] border border-[#E5E0D8] rounded-2xl p-6 text-[14px] text-[#777777]">
-                    선택한 조건에 맞는 장소가 아직 없어요. 반경을 넓혀서 다시 확인해 보세요.
+                    선택한 조건에 맞는 장소가 아직 없어요. 잠시 후 다시 확인해 보세요.
                   </div>
                 ) : (
                   <div className="h-full min-h-0 overflow-y-auto pr-1 sm:pr-2">
@@ -361,7 +329,7 @@ export default function LearningSpacesPage() {
                 pins={mapPins}
                 userLocation={coordinates}
                 locationLabel={coordinates?.label ?? "현재 위치"}
-                radius={radius}
+                radius={SEARCH_RADIUS}
                 focusTarget={focusTarget}
                 onSelectPin={(spaceId) => {
                   const target = filteredSpaces.find((space) => space.id === spaceId);

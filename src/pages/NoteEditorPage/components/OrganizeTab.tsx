@@ -4,6 +4,8 @@ import { type AiOrganizeResponse } from "../../../api/client";
 
 interface OrganizeTabProps {
   aiOrganizeResult: AiOrganizeResponse | null;
+  aiOrganizeLoading: boolean;
+  showAIResult: boolean;
   onAiOrganize: () => void;
   onAddSummaryLine?: (line: string) => void;
   onAddSuggestion?: (suggestion: string) => void;
@@ -11,6 +13,8 @@ interface OrganizeTabProps {
 
 export function OrganizeTab({ 
   aiOrganizeResult, 
+  aiOrganizeLoading,
+  showAIResult,
   onAiOrganize,
   onAddSummaryLine,
   onAddSuggestion 
@@ -20,17 +24,22 @@ export function OrganizeTab({
       {/* Generate Button */}
       <button
         onClick={onAiOrganize}
-        className="w-full h-11 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-opacity"
+        disabled={aiOrganizeLoading}
+        className="w-full h-11 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
         style={{ backgroundColor: "#3B6B4A", color: "white" }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+        onMouseEnter={(e) => {
+          if (!aiOrganizeLoading) e.currentTarget.style.opacity = "0.9";
+        }}
+        onMouseLeave={(e) => {
+          if (!aiOrganizeLoading) e.currentTarget.style.opacity = "1";
+        }}
       >
         <Sparkles size={16} />
-        <span>🤖 AI 에게 노트 정리 요청</span>
+        <span>{aiOrganizeLoading ? "🤖 AI가 노트를 정리하는 중..." : "🤖 AI 에게 노트 정리 요청"}</span>
       </button>
 
       {/* AI Result */}
-      {aiOrganizeResult && (
+      {showAIResult && aiOrganizeResult && (
         <div className="flex flex-col gap-6">
           {/* Section 1: Keywords */}
           <div>

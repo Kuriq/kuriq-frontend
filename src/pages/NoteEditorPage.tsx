@@ -33,8 +33,10 @@ export default function NoteEditorPage() {
     saving,
     loading,
     noteId,
+    aiOrganizeLoading,
     aiOrganizeResult,
     showOrganizeResult,
+    setShowOrganizeResult,
     setNoteContent,
     handleAiOrganize,
     handleManualSave,
@@ -129,6 +131,14 @@ export default function NoteEditorPage() {
     setShowQuizResult,
     setExpandedQuestion,
   } = useNoteQuiz(courseId);
+
+  const isAiTaskRunning = aiOrganizeLoading || quizLoading;
+
+  const handleTabChange = (nextTab: "organize" | "quiz" | "chat") => {
+    if (isAiTaskRunning) return;
+    setActiveTab(nextTab);
+    if (nextTab !== "organize") setShowOrganizeResult(false);
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F8F6F1" }}>
@@ -335,11 +345,9 @@ export default function NoteEditorPage() {
             <div className="bg-white rounded-xl border border-[#E5E0D8] overflow-hidden">
               <div className="flex">
                 <button
-                  onClick={() => {
-                    setActiveTab("organize");
-                    setShowAIResult(false);
-                  }}
-                  className="flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2"
+                  onClick={() => handleTabChange("organize")}
+                  disabled={isAiTaskRunning}
+                  className="flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     color: activeTab === "organize" ? "#3B6B4A" : "#777777",
                     borderBottomColor: activeTab === "organize" ? "#3B6B4A" : "transparent",
@@ -349,8 +357,9 @@ export default function NoteEditorPage() {
                   🤖 AI 정리
                 </button>
                 <button
-                  onClick={() => setActiveTab("quiz")}
-                  className="flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2"
+                  onClick={() => handleTabChange("quiz")}
+                  disabled={isAiTaskRunning}
+                  className="flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     color: activeTab === "quiz" ? "#3B6B4A" : "#777777",
                     borderBottomColor: activeTab === "quiz" ? "#3B6B4A" : "transparent",
@@ -360,8 +369,9 @@ export default function NoteEditorPage() {
                   📝 퀴즈 풀기
                 </button>
                 <button
-                  onClick={() => setActiveTab("chat")}
-                  className="flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2"
+                  onClick={() => handleTabChange("chat")}
+                  disabled={isAiTaskRunning}
+                  className="flex-1 py-3 px-4 text-sm font-medium transition-colors border-b-2 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     color: activeTab === "chat" ? "#3B6B4A" : "#777777",
                     borderBottomColor: activeTab === "chat" ? "#3B6B4A" : "transparent",
@@ -378,6 +388,7 @@ export default function NoteEditorPage() {
                   <div className="max-h-[500px] overflow-y-auto">
                     <OrganizeTab
                       aiOrganizeResult={aiOrganizeResult}
+                      aiOrganizeLoading={aiOrganizeLoading}
                       showAIResult={showOrganizeResult}
                       onAiOrganize={handleAiOrganize}
                       onAddSummaryLine={(line: string) => {

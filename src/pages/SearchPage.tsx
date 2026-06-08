@@ -413,66 +413,43 @@ function Pagination({
   totalPages: number;
   onPageChange: (page: number) => void;
 }) {
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible + 2) {
-      for (let i = 0; i < totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage < 3) {
-        for (let i = 0; i < maxVisible; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages - 1);
-      } else if (currentPage > totalPages - 4) {
-        pages.push(0);
-        pages.push("...");
-        for (let i = totalPages - maxVisible; i < totalPages; i++) pages.push(i);
-      } else {
-        pages.push(0);
-        pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages - 1);
-      }
-    }
-    return pages;
-  };
+  const pageGroupSize = 5;
+  const groupStart = Math.floor(currentPage / pageGroupSize) * pageGroupSize;
+  const groupEnd = Math.min(groupStart + pageGroupSize, totalPages);
+  const pageNumbers = Array.from({ length: groupEnd - groupStart }, (_, index) => groupStart + index);
+  const hasPreviousGroup = groupStart > 0;
+  const hasNextGroup = groupEnd < totalPages;
 
   return (
     <div className="flex items-center justify-center gap-1.5 mt-8">
       <button
-        disabled={currentPage === 0}
-        onClick={() => onPageChange(currentPage - 1)}
+        disabled={!hasPreviousGroup}
+        onClick={() => onPageChange(Math.max(groupStart - pageGroupSize, 0))}
         className="px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-40"
         style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
       >
         이전
       </button>
 
-      {getPageNumbers().map((page, idx) =>
-        typeof page === "string" ? (
-          <span key={idx} className="px-2 py-1.5 text-sm text-[#777777]">
-            {page}
-          </span>
-        ) : (
-          <button
-            key={idx}
-            onClick={() => onPageChange(page)}
-            className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-              page === currentPage
-                ? "bg-[#3B6B4A] border-[#3B6B4A] text-white font-[600]"
-                : "bg-white border-[#E5E0D8] text-[#777777] hover:border-[#3B6B4A]"
-            }`}
-          >
-            {page + 1}
-          </button>
-        )
-      )}
+      {pageNumbers.map((page) => (
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
+          className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+            page === currentPage
+              ? "bg-[#3B6B4A] border-[#3B6B4A] text-white font-[600]"
+              : "bg-white border-[#E5E0D8] text-[#777777] hover:border-[#3B6B4A]"
+          }`}
+        >
+          {page + 1}
+        </button>
+      ))}
+
+      {hasNextGroup ? <span className="px-2 py-1.5 text-sm text-[#777777]">...</span> : null}
 
       <button
-        disabled={currentPage === totalPages - 1}
-        onClick={() => onPageChange(currentPage + 1)}
+        disabled={!hasNextGroup}
+        onClick={() => onPageChange(groupStart + pageGroupSize)}
         className="px-3 py-1.5 rounded-lg text-sm border transition-colors disabled:opacity-40"
         style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
       >

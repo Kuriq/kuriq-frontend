@@ -10,6 +10,7 @@ interface UseNoteReturn {
   lastSavedAt: string | null;
   saving: boolean;
   loading: boolean;
+  aiOrganizeLoading: boolean;
   aiOrganizeResult: AiOrganizeResponse | null;
   showOrganizeResult: boolean;
   setShowOrganizeResult: (show: boolean) => void;
@@ -29,6 +30,7 @@ export function useNote(courseId: string): UseNoteReturn {
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [aiOrganizeLoading, setAiOrganizeLoading] = useState(false);
   const [aiOrganizeResult, setAiOrganizeResult] = useState<AiOrganizeResponse | null>(null);
   const [showOrganizeResult, setShowOrganizeResult] = useState(false);
 
@@ -110,20 +112,23 @@ export function useNote(courseId: string): UseNoteReturn {
   }, []);
 
   const handleAiOrganize = useCallback(async () => {
-    if (!noteId) return;
+    if (!noteId || aiOrganizeLoading) return;
     if (noteContent.length < 50) {
       alert("AI 정리는 50 자 이상 작성 후 사용해주세요.");
       return;
     }
     try {
+      setAiOrganizeLoading(true);
       const res = await aiOrganizeNote(noteId, courseCategory || "기타");
       setAiOrganizeResult(res);
       setShowOrganizeResult(true);
     } catch (err) {
       console.error("AI 노트 정리 실패:", err);
       alert("AI 노트 정리에 실패했습니다.");
+    } finally {
+      setAiOrganizeLoading(false);
     }
-  }, [noteId, noteContent, courseCategory]);
+  }, [aiOrganizeLoading, noteId, noteContent, courseCategory]);
 
   return {
     noteContent,
@@ -134,6 +139,7 @@ export function useNote(courseId: string): UseNoteReturn {
     lastSavedAt,
     saving,
     loading,
+    aiOrganizeLoading,
     noteId,
     aiOrganizeResult,
     showOrganizeResult,

@@ -16,7 +16,7 @@ export function Navigation({ activeMenu = "홈" }: NavigationProps) {
     { label: "로드맵", path: "/roadmap" },
     { label: "대시보드", path: "/dashboard" },
     { label: "강좌 검색", path: "/search" },
-    { label: "장소추천", path: "/learning-spaces" },
+    { label: "장소 탐색", path: "/learning-spaces" },
     { label: "커뮤니티", path: "/community" },
     { label: "마이페이지", path: "/mypage" },
     { label: "알림 설정", path: "/notifications", icon: true },

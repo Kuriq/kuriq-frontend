@@ -3,7 +3,7 @@ import type { CommunitySort } from "../types";
 const sortOptions: Array<{ label: string; value: CommunitySort }> = [
   { label: "최신순", value: "latest" },
   { label: "조회수순", value: "views" },
-  { label: "인기순", value: "popular" },
+  { label: "좋아요순", value: "popular" },
 ];
 
 export function CommunitySortTabs({ value, onChange }: { value: CommunitySort; onChange: (value: CommunitySort) => void }) {

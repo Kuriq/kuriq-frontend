@@ -307,6 +307,19 @@ export async function createCommunityPost(data: CommunityCreatePostRequest) {
   });
 }
 
+export async function updateCommunityPost(postId: string, data: CommunityCreatePostRequest) {
+  return request<void>(`/api/v1/posts/${postId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCommunityPost(postId: string) {
+  return request<void>(`/api/v1/posts/${postId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function toggleCommunityPostLike(postId: string) {
   return request<CommunityLikeResponse>(`/api/v1/posts/${postId}/like`, {
     method: "POST",
@@ -768,6 +781,7 @@ export interface NextCourse {
   message: string;
 }
 
-export async function getRecommendations() {
-  return request<NextCourse[]>("/api/v1/users/me/recommendations");
+export async function getRecommendations(roadmapId?: string) {
+  const query = roadmapId ? `?roadmapId=${encodeURIComponent(roadmapId)}` : "";
+  return request<NextCourse[]>(`/api/v1/users/me/recommendations${query}`);
 }

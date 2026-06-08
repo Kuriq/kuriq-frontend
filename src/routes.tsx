@@ -40,6 +40,7 @@ export const router = createBrowserRouter([
   { path: "/learning-spaces", element: <ProtectedRoute><LearningSpacesPage /></ProtectedRoute> },
   { path: "/community", element: <ProtectedRoute><CommunityPage /></ProtectedRoute> },
   { path: "/community/create", element: <ProtectedRoute><PostCreatePage /></ProtectedRoute> },
+  { path: "/community/:postId/edit", element: <ProtectedRoute><PostCreatePage /></ProtectedRoute> },
   { path: "/community/:postId", element: <ProtectedRoute><CommunityPostDetailPage /></ProtectedRoute> },
   { path: "/ai-review-demo", element: <AIReviewNoteDemoPage /> },
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Heart, MessageSquare, Eye } from "lucide-react";
+import { Heart, MessageSquare, Eye, PencilLine, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
-import { createCommunityComment, getCommunityPost, toggleCommunityPostLike, type CommunityPostDetail } from "../api/client";
+import { createCommunityComment, deleteCommunityPost, getCommunityPost, toggleCommunityPostLike, type CommunityPostDetail } from "../api/client";
 import { Navigation } from "../components/layout/Navigation";
 import { useAuth } from "../context/AuthContext";
 import { CommunityCommentComposer } from "./community/components/CommunityCommentComposer";
@@ -12,14 +12,16 @@ import { formatRelativeKoreanDate, getFriendlyCommunityErrorMessage } from "./co
 export default function CommunityPostDetailPage() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [post, setPost] = useState<CommunityPostDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [likePending, setLikePending] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [likeError, setLikeError] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadPost = useCallback(async (options?: { increaseView?: boolean }) => {
     if (!postId) return;
@@ -82,6 +84,26 @@ export default function CommunityPostDetailPage() {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!postId || deletePending) return;
+    if (!window.confirm("이 게시글을 삭제할까요? 삭제 후에는 되돌릴 수 없어요.")) return;
+
+    try {
+      setDeletePending(true);
+      setDeleteError(null);
+      await deleteCommunityPost(postId);
+      navigate("/community", { replace: true });
+    } catch (err) {
+      const message = getFriendlyCommunityErrorMessage(err, "게시글 삭제에 실패했어요.");
+      setDeleteError(message);
+    } finally {
+      setDeletePending(false);
+    }
+  };
+
+  const isMine = Boolean(post && user?.id && post.authorId === user.id);
+  const isEdited = Boolean(post && new Date(post.updatedAt).getTime() > new Date(post.createdAt).getTime());
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="커뮤니티" />
@@ -111,8 +133,31 @@ export default function CommunityPostDetailPage() {
                       {post.anonymous ? <span className="rounded-full bg-[#F8F6F1] px-3 py-1 text-[11px] font-[700] text-[#7A6F62]">익명</span> : null}
                     </div>
                     <h1 className="mb-2 text-[28px] font-[800] leading-tight text-[#2C2C2C]">{post.title}</h1>
-                    <p className="text-[14px] text-[#777777]">{post.authorName} · {formatRelativeKoreanDate(post.createdAt)}</p>
+                    <p className="text-[14px] text-[#777777]">
+                      {post.authorName} · {formatRelativeKoreanDate(post.createdAt)}
+                      {isEdited ? " (수정됨)" : ""}
+                    </p>
                   </div>
+                  {isMine ? (
+                    <div className="flex shrink-0 items-center gap-2 self-start">
+                      <Link
+                        to={`/community/${post.id}/edit`}
+                        className="inline-flex items-center gap-1 rounded-full border border-[#D9E6DC] bg-[#F8FDF9] px-4 py-2 text-[13px] font-[700] text-[#3B6B4A] transition-colors hover:bg-[#E8F0EA]"
+                      >
+                        <PencilLine className="h-4 w-4" />
+                        수정
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleDeletePost}
+                        disabled={deletePending}
+                        className="inline-flex items-center gap-1 rounded-full border border-[#F0CAD5] bg-[#FFF7F9] px-4 py-2 text-[13px] font-[700] text-[#B4516C] transition-colors hover:bg-[#FDEEF3] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {deletePending ? "삭제 중..." : "삭제"}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="mb-6 whitespace-pre-wrap text-[15px] leading-[1.8] text-[#444444]">{post.content}</div>
@@ -132,6 +177,7 @@ export default function CommunityPostDetailPage() {
                 </div>
 
                 {likeError ? <p className="mt-3 text-[12px] text-[#C75B7A]">{likeError}</p> : null}
+                {deleteError ? <p className="mt-3 text-[12px] text-[#C75B7A]">{deleteError}</p> : null}
               </article>
 
               <section>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse, completeItem, uncompleteItem, getRecommendations, type NextCourse } from "../api/client";
@@ -9,15 +9,13 @@ import { getPlatformLabel } from "../utils/platform";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< Updated upstream
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-=======
   const [recommendations, setRecommendations] = useState<NextCourse[]>([]);
->>>>>>> Stashed changes
 
   useEffect(() => {
     let cancelled = false;
@@ -28,7 +26,7 @@ export default function DashboardPage() {
 
       try {
         // 1. state로 전달받은 roadmapId 우선 사용
-        const stateRoadmapId = (window.history.state as any)?.usr?.roadmapId;
+        const stateRoadmapId = (location.state as { roadmapId?: string } | null)?.roadmapId;
         
         let roadmapId: string | undefined = stateRoadmapId;
 
@@ -56,7 +54,7 @@ export default function DashboardPage() {
           setCurrentWeekIndex(idx >= 0 ? idx : 0);
 
           try {
-            const recs = await getRecommendations();
+            const recs = await getRecommendations(roadmapId);
             if (!cancelled) setRecommendations(recs ?? []);
           } catch {
             // 추천 실패해도 대시보드는 정상 표시
@@ -74,7 +72,7 @@ export default function DashboardPage() {
 
     loadDashboard();
     return () => { cancelled = true; };
-  }, []);
+  }, [location.state]);
 
   if (loading) {
     return (
@@ -407,15 +405,24 @@ export default function DashboardPage() {
                           {rec.message}
                         </p>
                         
-                        <a
-                          href={rec.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-medium px-3 py-1.5 rounded-lg"
-                          style={{ backgroundColor: '#3B6B4A', color: 'white' }}
-                        >
-                          강좌 보기 →
-                        </a>
+                        {rec.url ? (
+                          <a
+                            href={rec.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block text-xs font-medium px-3 py-1.5 rounded-lg"
+                            style={{ backgroundColor: '#3B6B4A', color: 'white' }}
+                          >
+                            강좌 보기 →
+                          </a>
+                        ) : (
+                          <span
+                            className="inline-block text-xs font-medium px-3 py-1.5 rounded-lg"
+                            style={{ backgroundColor: '#D7D2C9', color: '#6F6A62' }}
+                          >
+                            링크 준비 중
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

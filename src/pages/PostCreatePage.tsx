@@ -1,19 +1,57 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { createCommunityPost } from "../api/client";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { createCommunityPost, getCommunityPost, updateCommunityPost } from "../api/client";
 import { Navigation } from "../components/layout/Navigation";
+import { useAuth } from "../context/AuthContext";
 import { getFriendlyCommunityErrorMessage } from "./community/utils";
 
 export default function PostCreatePage() {
+  const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingPost, setLoadingPost] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
+
+  const isEditMode = useMemo(() => Boolean(postId), [postId]);
 
   const isValid = title.trim().length > 0 && content.trim().length > 0;
+
+  useEffect(() => {
+    if (!postId) return;
+
+    const loadPost = async () => {
+      try {
+        setLoadingPost(true);
+        setError(null);
+        setNeedsLogin(false);
+        setForbidden(false);
+        const post = await getCommunityPost(postId, { increaseView: false });
+
+        if (user?.id && post.authorId !== user.id) {
+          setForbidden(true);
+          return;
+        }
+
+        setTitle(post.title);
+        setContent(post.content);
+        setAnonymous(post.anonymous);
+      } catch (err) {
+        const message = getFriendlyCommunityErrorMessage(err, "게시글 정보를 불러오지 못했어요.");
+        setError(message);
+        setNeedsLogin(message.includes("로그인"));
+      } finally {
+        setLoadingPost(false);
+      }
+    };
+
+    void loadPost();
+  }, [postId, user?.id]);
 
   const handleSubmit = async () => {
     const trimmedTitle = title.trim();
@@ -29,12 +67,17 @@ export default function PostCreatePage() {
       setSubmitting(true);
       setError(null);
       setNeedsLogin(false);
-      const created = await createCommunityPost({ title: trimmedTitle, content: trimmedContent, anonymous });
-      navigate(`/community/${created.id}`);
+      if (isEditMode && postId) {
+        await updateCommunityPost(postId, { title: trimmedTitle, content: trimmedContent, anonymous });
+        navigate(`/community/${postId}`);
+      } else {
+        const created = await createCommunityPost({ title: trimmedTitle, content: trimmedContent, anonymous });
+        navigate(`/community/${created.id}`);
+      }
     } catch (err) {
       const message = getFriendlyCommunityErrorMessage(
         err,
-        "게시글 작성에 실패했어요.",
+        isEditMode ? "게시글 수정에 실패했어요." : "게시글 작성에 실패했어요.",
         "로그인 정보가 만료되었어요. 내용을 확인한 뒤 다시 로그인해 주세요."
       );
       setError(message);
@@ -50,10 +93,22 @@ export default function PostCreatePage() {
 
       <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[860px]">
+          {loadingPost ? (
+            <div className="rounded-[20px] border border-[#E5E0D8] bg-white px-6 py-12 text-center text-[15px] text-[#777777]">
+              게시글 정보를 불러오는 중이에요...
+            </div>
+          ) : forbidden ? (
+            <div className="rounded-[20px] border border-[#F0CAD5] bg-white px-6 py-12 text-center text-[15px] text-[#A94A67]">
+              본인이 작성한 글만 수정할 수 있어요.
+            </div>
+          ) : (
+            <>
           <div className="mb-6 rounded-[24px] border border-[#E5E0D8] bg-white p-6 shadow-sm sm:p-7">
             <p className="mb-2 text-[12px] font-[700] tracking-[0.08em] text-[#3B6B4A]">WRITE POST</p>
-            <h1 className="mb-2 text-[26px] font-[800] text-[#2C2C2C]">게시글 작성</h1>
-            <p className="text-[14px] text-[#777777]">자유게시판에 질문이나 학습 경험을 남겨보세요.</p>
+            <h1 className="mb-2 text-[26px] font-[800] text-[#2C2C2C]">{isEditMode ? "게시글 수정" : "게시글 작성"}</h1>
+            <p className="text-[14px] text-[#777777]">
+              {isEditMode ? "작성한 내용을 수정하고 다시 저장해 보세요." : "자유게시판에 질문이나 학습 경험을 남겨보세요."}
+            </p>
           </div>
 
           <div className="rounded-[20px] border border-[#E5E0D8] bg-white p-6 sm:p-8">
@@ -111,7 +166,7 @@ export default function PostCreatePage() {
             <div className="mt-8 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => navigate("/community")}
+                onClick={() => navigate(isEditMode && postId ? `/community/${postId}` : "/community")}
                 className="rounded-full border border-[#E5E0D8] bg-white px-5 py-3 text-[14px] font-[700] text-[#666666] hover:bg-[#F8F6F1]"
               >
                 취소
@@ -122,10 +177,12 @@ export default function PostCreatePage() {
                 disabled={submitting || !isValid}
                 className="rounded-full bg-[#3B6B4A] px-6 py-3 text-[14px] font-[700] text-white transition-colors hover:bg-[#2d5438] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {submitting ? "등록 중..." : "등록하기"}
+                {submitting ? (isEditMode ? "저장 중..." : "등록 중...") : (isEditMode ? "저장하기" : "등록하기")}
               </button>
             </div>
           </div>
+            </>
+          )}
         </div>
       </main>
     </div>
