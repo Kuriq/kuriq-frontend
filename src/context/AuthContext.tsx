@@ -8,6 +8,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, ageGroup?: string) => Promise<void>;
   logout: () => Promise<void>;
+  setUserProfile: (profile: UserProfile | null) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -24,19 +26,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [user, setUser] = useState<UserProfile | null>(null);
 
+  const refreshUser = useCallback(async () => {
+    if (!accessToken) {
+      setUser(null);
+      return;
+    }
+
+    const profile = await getProfile();
+    setUser(profile);
+  }, [accessToken]);
+
   // Fetch profile on mount if token exists
   useEffect(() => {
     if (accessToken) {
-      getProfile()
-        .then(setUser)
+      refreshUser()
         .catch(() => {
           // 토큰이 유효하지 않으면 제거
           localStorage.removeItem("accessToken");
           setAccessToken(null);
           setUser(null);
         });
+    } else {
+      setUser(null);
     }
-  }, [accessToken]);
+  }, [accessToken, refreshUser]);
 
   useEffect(() => {
     const handler = (e: StorageEvent) => {
@@ -71,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!accessToken, accessToken, user, login, signup, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!accessToken, accessToken, user, login, signup, logout, setUserProfile: setUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

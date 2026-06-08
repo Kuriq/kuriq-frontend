@@ -3,6 +3,7 @@ import { Bell, Palette, Save, UserRound } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
 import { getNotificationSettings, getProfile, updateNotificationSettings, updateProfile, type NotificationSettings, type UserProfile } from "../api/client";
 import { OwlMascot } from "../components/common/OwlMascot";
+import { useAuth } from "../context/AuthContext";
 
 const DAY_MAP: Record<string, string> = {
   MON: "월요일", TUE: "화요일", WED: "수요일", THU: "목요일",
@@ -32,6 +33,7 @@ function formatDisplayToTime(display: string): string {
 type SettingsTab = "profile" | "notifications";
 
 export default function SettingsPage() {
+  const { setUserProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileName, setProfileName] = useState("");
@@ -90,6 +92,7 @@ export default function SettingsPage() {
       setError(null);
       const nextProfile = await updateProfile({ name: profileName.trim(), profileIcon, profileColor });
       setProfile(nextProfile);
+      setUserProfile(nextProfile);
       setProfileName(nextProfile.name);
       setProfileIcon(nextProfile.profileIcon || "🦉");
       setProfileColor(nextProfile.profileColor || "#3B6B4A");

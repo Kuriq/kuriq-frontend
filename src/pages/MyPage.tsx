@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, User } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Link } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { BadgeShowcaseCard } from "../components/badges/BadgeShowcaseCard";
@@ -17,6 +17,7 @@ export default function MyPage() {
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [myPostCount, setMyPostCount] = useState(0);
   const [myCommentCount, setMyCommentCount] = useState(0);
+  const [activityTab, setActivityTab] = useState<"courses" | "community">("courses");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,15 +37,14 @@ export default function MyPage() {
   const badgeViewModels = useMemo(() => mapBadgesToViewModels(badges, stats), [badges, stats]);
   const badgeSummary = useMemo(() => getBadgeSummary(badgeViewModels), [badgeViewModels]);
 
-  const formatHours = (hours: number) => {
-    if (hours < 1) return `${Math.round(hours * 60)}분`;
-    return `${hours}시간`;
-  };
-
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
   };
+
+  const joinedDate = user?.createdAt ? formatDate(user.createdAt) : "-";
+  const profileIcon = user?.profileIcon || "🦉";
+  const profileColor = user?.profileColor || "#3B6B4A";
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
@@ -54,14 +54,14 @@ export default function MyPage() {
         <div className="mx-auto max-w-[1040px]">
           <div className="mb-8 flex flex-col gap-4 rounded-[24px] border border-[#E5E0D8] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#E8F0EA]">
-                <User className="w-7 h-7 text-[#3B6B4A]" />
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-[26px] text-white" style={{ backgroundColor: profileColor }}>
+                {profileIcon}
               </div>
               <div>
                 <h1 className="mb-1 text-[22px] font-[800] text-[#2C2C2C]">
-                  {loading ? "로딩 중..." : `${user?.name}님의 학습 기록`}
+                  {user?.name ? `${user.name}님의 학습 기록` : loading ? "로딩 중..." : "나의 학습 기록"}
                 </h1>
-                <p className="text-[13px] text-[#777777]">가입일: 2026.03.15</p>
+                <p className="text-[13px] text-[#777777]">가입일: {joinedDate}</p>
               </div>
             </div>
             <div className="inline-flex items-center gap-2 self-start rounded-full bg-[#F8F6F1] px-4 py-2 text-[13px] font-[600] text-[#5F6D62] sm:self-auto">
@@ -131,14 +131,13 @@ export default function MyPage() {
 
             <div>
               <div className="mb-5 flex items-center justify-between gap-3">
-                <h2 className="text-[18px] font-[800] text-[#2C2C2C]">📜 커뮤니티 활동</h2>
-                <div className="flex gap-2">
-                  <Link to="/community?tab=posts&mine=true" className="rounded-full border border-[#E5E0D8] bg-white px-3 py-1.5 text-[12px] font-[700] text-[#666666] hover:border-[#3B6B4A] hover:text-[#3B6B4A]">
-                    작성한 글 보기
-                  </Link>
-                  <Link to="/community?tab=posts&comments=me" className="rounded-full border border-[#E5E0D8] bg-white px-3 py-1.5 text-[12px] font-[700] text-[#666666] hover:border-[#3B6B4A] hover:text-[#3B6B4A]">
-                    작성한 댓글 보기
-                  </Link>
+                <div>
+                  <h2 className="text-[18px] font-[800] text-[#2C2C2C]">📜 활동 모아보기</h2>
+                  <p className="mt-1 text-[13px] text-[#777777]">최근 이수 강좌와 커뮤니티 활동을 나눠서 볼 수 있어요.</p>
+                </div>
+                <div className="flex gap-2 rounded-full bg-[#F3F0E8] p-1">
+                  <ActivityTabButton active={activityTab === "courses"} onClick={() => setActivityTab("courses")} label="최근 이수 강좌" />
+                  <ActivityTabButton active={activityTab === "community"} onClick={() => setActivityTab("community")} label="커뮤니티 활동" />
                 </div>
               </div>
               <div className="bg-white border border-[#E5E0D8] rounded-2xl p-6">
@@ -152,14 +151,38 @@ export default function MyPage() {
                       </div>
                     </div>
                   ))
-                ) : (stats?.totalCommunityPosts ?? myPostCount) === 0 && (stats?.totalCommunityComments ?? myCommentCount) === 0 ? (
-                  <p className="text-[14px] text-[#777777] text-center py-4">아직 커뮤니티 활동이 없습니다.</p>
+                ) : activityTab === "courses" ? (
+                  history.length === 0 ? (
+                    <p className="text-[14px] text-[#777777] text-center py-4">최근 이수한 강좌가 없습니다.</p>
+                  ) : (
+                    history.map(item => (
+                      <RecentCompletionItem
+                        key={item.id}
+                        courseName={item.courseTitle}
+                        platform={item.platform}
+                        date={formatDate(item.completedAt)}
+                      />
+                    ))
+                  )
                 ) : (
-                  <div className="space-y-3">
-                    <CommunityActivityItem label="작성한 게시글" value={`${stats?.totalCommunityPosts ?? myPostCount}개`} description="질문, 후기, 팁을 남긴 횟수" />
-                    <CommunityActivityItem label="작성한 댓글" value={`${stats?.totalCommunityComments ?? myCommentCount}개`} description="다른 학습자와 대화한 횟수" />
-                    <CommunityActivityItem label="최근 이수 강좌" value={`${history.length}개`} description={history[0] ? `${history[0].courseTitle} · ${formatDate(history[0].completedAt)}` : "최근 이수 이력이 없습니다."} />
-                  </div>
+                  (stats?.totalCommunityPosts ?? myPostCount) === 0 && (stats?.totalCommunityComments ?? myCommentCount) === 0 ? (
+                    <p className="text-[14px] text-[#777777] text-center py-4">아직 커뮤니티 활동이 없습니다.</p>
+                  ) : (
+                    <>
+                      <div className="mb-4 flex gap-2">
+                        <Link to="/community?tab=posts&mine=true" className="rounded-full border border-[#E5E0D8] bg-white px-3 py-1.5 text-[12px] font-[700] text-[#666666] hover:border-[#3B6B4A] hover:text-[#3B6B4A]">
+                          작성한 글 보기
+                        </Link>
+                        <Link to="/community?tab=posts&comments=me" className="rounded-full border border-[#E5E0D8] bg-white px-3 py-1.5 text-[12px] font-[700] text-[#666666] hover:border-[#3B6B4A] hover:text-[#3B6B4A]">
+                          작성한 댓글 보기
+                        </Link>
+                      </div>
+                      <div className="space-y-3">
+                        <CommunityActivityItem label="작성한 게시글" value={`${stats?.totalCommunityPosts ?? myPostCount}개`} description="질문, 후기, 팁을 남긴 횟수" />
+                        <CommunityActivityItem label="작성한 댓글" value={`${stats?.totalCommunityComments ?? myCommentCount}개`} description="다른 학습자와 대화한 횟수" />
+                      </div>
+                    </>
+                  )
                 )}
               </div>
             </div>
@@ -207,6 +230,18 @@ function StatSummaryCard({
       <div className="break-keep text-[24px] font-[800] text-[#3B6B4A] sm:text-[28px] mb-1">{value}</div>
       <div className="text-[13px] text-[#777777] font-[400]">{label}</div>
     </div>
+  );
+}
+
+function ActivityTabButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-[12px] font-[700] transition-colors ${active ? "bg-white text-[#2C2C2C] shadow-sm" : "text-[#777777]"}`}
+    >
+      {label}
+    </button>
   );
 }
 
