@@ -460,6 +460,8 @@ export interface UserBadge {
   description: string;
   acquired: boolean;
   acquiredAt: string | null;
+  progressCurrent: number | null;
+  progressTotal: number | null;
 }
 
 export async function getMyBadges() {

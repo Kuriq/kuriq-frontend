@@ -48,18 +48,18 @@ export default function MyPage() {
 
       <main className="flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-[1040px]">
-          <div className="mb-8 flex flex-col gap-4 rounded-[24px] border border-[#E5E0D8] bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-7">
+          <div className="mb-8 flex flex-col gap-4 rounded-[24px] border border-[#E5E0D8] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#E8F0EA]">
-              <User className="w-7 h-7 text-[#3B6B4A]" />
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#E8F0EA]">
+                <User className="w-7 h-7 text-[#3B6B4A]" />
+              </div>
+              <div>
+                <h1 className="mb-1 text-[22px] font-[800] text-[#2C2C2C]">
+                  {loading ? "로딩 중..." : `${user?.name}님의 학습 기록`}
+                </h1>
+                <p className="text-[13px] text-[#777777]">가입일: 2026.03.15</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-[22px] font-[800] text-[#2C2C2C] mb-1">
-                {loading ? "로딩 중..." : `${user?.name}님의 학습 기록`}
-              </h1>
-              <p className="text-[13px] text-[#777777]">가입일: 2026.03.15</p>
-            </div>
-          </div>
             <div className="inline-flex items-center gap-2 self-start rounded-full bg-[#F8F6F1] px-4 py-2 text-[13px] font-[600] text-[#5F6D62] sm:self-auto">
               <span>🏅</span>
               <span>{loading ? "뱃지 불러오는 중..." : `${badgeSummary.acquiredCount}개의 뱃지 보유`}</span>
@@ -154,7 +154,7 @@ export default function MyPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#FFE5D0] bg-[#FFF3EB] p-6">
+          <div className="rounded-2xl border border-[#FFE5D0] bg-[#FFF3EB] p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-shrink-0">
                 <OwlMascot size={44} variant="winking" />
