@@ -69,9 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await apiLogin(email, password);
     localStorage.setItem("accessToken", res.accessToken); // 먼저 저장 → getProfile이 토큰 읽을 수 있음
-    const profile = await getProfile(); // localStorage에서 토큰 읽어서 호출
-    setUser(profile);
-    setAccessToken(res.accessToken); // 마지막에 state 업데이트
+    try {
+      const profile = await getProfile(); // localStorage에서 토큰 읽어서 호출
+      setUser(profile);
+    } catch (e) {
+      console.error("❌ getProfile 실패:", e); // 실패해도 로그인은 유지
+    }
+    setAccessToken(res.accessToken); // getProfile 성공/실패 상관없이 반드시 실행
     setIsLoading(false);
   }, []);
 
