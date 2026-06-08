@@ -28,21 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUser = useCallback(async () => {
-    if (!accessToken) {
-      setUser(null);
-      return;
-    }
-    const profile = await getProfile();
-    setUser(profile);
-  }, [accessToken]);
-
-  // Fetch profile on mount if token exists
+  // 마운트 시 한 번만 실행 — accessToken 변경 시 재실행 안 함
   useEffect(() => {
-    if (accessToken) {
-      refreshUser()
-        .catch((err) => {
-          console.error("❌ refreshUser 실패:", err);
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      getProfile()
+        .then((profile) => {
+          setUser(profile);
+        })
+        .catch(() => {
           // 토큰이 유효하지 않으면 제거
           localStorage.removeItem("accessToken");
           setAccessToken(null);
@@ -50,10 +44,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .finally(() => setIsLoading(false));
     } else {
-      setUser(null);
       setIsLoading(false);
     }
-  }, [accessToken, refreshUser]);
+  }, []); // 빈 배열 → 마운트 시 한 번만
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    const profile = await getProfile();
+    setUser(profile);
+  }, []);
 
   useEffect(() => {
     const handler = (e: StorageEvent) => {
@@ -68,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("accessToken", res.accessToken); // 먼저 저장 → getProfile이 토큰 읽을 수 있음
     const profile = await getProfile(); // localStorage에서 토큰 읽어서 호출
     setUser(profile);
-    setAccessToken(res.accessToken); // 마지막에 state 업데이트 → useEffect 재실행 방지
+    setAccessToken(res.accessToken); // 마지막에 state 업데이트
     setIsLoading(false);
   }, []);
 
@@ -78,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [login]);
 
   const logout = useCallback(async () => {
-    console.error("🚨 logout 호출됨!", new Error().stack); // 어디서 호출됐는지 추적
+    console.error("🚨 logout 호출됨!", new Error().stack); // 호출 위치 추적
     try {
       await apiLogout();
     } catch {
