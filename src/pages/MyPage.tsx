@@ -5,7 +5,7 @@ import { Navigation } from "../components/layout/Navigation";
 import { BadgeShowcaseCard } from "../components/badges/BadgeShowcaseCard";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { useAuth } from "../context/AuthContext";
-import { getUserStats, getCategoryStats, getLearningHistory, getMyBadges, type UserStats, type CategoryStat, type LearningHistoryItem, type UserBadge } from "../api/client";
+import { getUserStats, getCategoryStats, getLearningHistory, getMyBadges, getMyCommunityPosts, getMyCommunityComments, type UserStats, type CategoryStat, type LearningHistoryItem, type UserBadge } from "../api/client";
 import { getBadgeSummary, mapBadgesToViewModels } from "../features/badges";
 import { getPlatformLabel } from "../utils/platform";
 
@@ -15,15 +15,19 @@ export default function MyPage() {
   const [categories, setCategories] = useState<CategoryStat[]>([]);
   const [history, setHistory] = useState<LearningHistoryItem[]>([]);
   const [badges, setBadges] = useState<UserBadge[]>([]);
+  const [myPostCount, setMyPostCount] = useState(0);
+  const [myCommentCount, setMyCommentCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getUserStats(), getCategoryStats(), getLearningHistory(0, 5), getMyBadges()])
-      .then(([s, c, h, b]) => {
+    Promise.all([getUserStats(), getCategoryStats(), getLearningHistory(0, 5), getMyBadges(), getMyCommunityPosts(0, 1), getMyCommunityComments(0, 1)])
+      .then(([s, c, h, b, myPosts, myComments]) => {
         setStats(s);
         setCategories(c);
         setHistory(h);
         setBadges(b);
+        setMyPostCount(myPosts.totalElements);
+        setMyCommentCount(myComments.totalElements);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -79,9 +83,9 @@ export default function MyPage() {
           ) : (
             <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
               <StatSummaryCard icon="📚" value={`${stats?.totalCompletedCourses ?? 0}개`} label="이수 강좌" />
-              <StatSummaryCard icon="⏱" value={formatHours(stats?.totalLearningHours ?? 0)} label="총 학습 시간" />
+              <StatSummaryCard icon="💬" value={`${stats?.totalCommunityPosts ?? myPostCount}개`} label="작성한 글" />
               <StatSummaryCard icon="🔥" value={`${stats?.streakDays ?? 0}일`} label="연속 학습" />
-              <StatSummaryCard icon="✅" value={`${stats?.completedRoadmapCount ?? 0}개`} label="완료 로드맵" />
+              <StatSummaryCard icon="✍️" value={`${stats?.totalCommunityComments ?? myCommentCount}개`} label="작성한 댓글" />
             </div>
           )}
 
@@ -126,7 +130,17 @@ export default function MyPage() {
             </div>
 
             <div>
-              <h2 className="text-[18px] font-[800] text-[#2C2C2C] mb-5">📜 최근 이수 내역</h2>
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <h2 className="text-[18px] font-[800] text-[#2C2C2C]">📜 커뮤니티 활동</h2>
+                <div className="flex gap-2">
+                  <Link to="/community?tab=posts&mine=true" className="rounded-full border border-[#E5E0D8] bg-white px-3 py-1.5 text-[12px] font-[700] text-[#666666] hover:border-[#3B6B4A] hover:text-[#3B6B4A]">
+                    작성한 글 보기
+                  </Link>
+                  <Link to="/community?tab=posts&comments=me" className="rounded-full border border-[#E5E0D8] bg-white px-3 py-1.5 text-[12px] font-[700] text-[#666666] hover:border-[#3B6B4A] hover:text-[#3B6B4A]">
+                    작성한 댓글 보기
+                  </Link>
+                </div>
+              </div>
               <div className="bg-white border border-[#E5E0D8] rounded-2xl p-6">
                 {loading ? (
                   [1, 2, 3].map(i => (
@@ -138,17 +152,14 @@ export default function MyPage() {
                       </div>
                     </div>
                   ))
-                ) : history.length === 0 ? (
-                  <p className="text-[14px] text-[#777777] text-center py-4">이수한 강좌가 없습니다.</p>
+                ) : (stats?.totalCommunityPosts ?? myPostCount) === 0 && (stats?.totalCommunityComments ?? myCommentCount) === 0 ? (
+                  <p className="text-[14px] text-[#777777] text-center py-4">아직 커뮤니티 활동이 없습니다.</p>
                 ) : (
-                  history.map(item => (
-                    <RecentCompletionItem
-                      key={item.id}
-                      courseName={item.courseTitle}
-                      platform={item.platform}
-                      date={formatDate(item.completedAt)}
-                    />
-                  ))
+                  <div className="space-y-3">
+                    <CommunityActivityItem label="작성한 게시글" value={`${stats?.totalCommunityPosts ?? myPostCount}개`} description="질문, 후기, 팁을 남긴 횟수" />
+                    <CommunityActivityItem label="작성한 댓글" value={`${stats?.totalCommunityComments ?? myCommentCount}개`} description="다른 학습자와 대화한 횟수" />
+                    <CommunityActivityItem label="최근 이수 강좌" value={`${history.length}개`} description={history[0] ? `${history[0].courseTitle} · ${formatDate(history[0].completedAt)}` : "최근 이수 이력이 없습니다."} />
+                  </div>
                 )}
               </div>
             </div>
@@ -262,6 +273,18 @@ function RecentCompletionItem({
           <span className="text-[12px] text-[#777777]">{date} 이수</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CommunityActivityItem({ label, value, description }: { label: string; value: string; description: string }) {
+  return (
+    <div className="rounded-xl bg-[#F8F6F1] px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[14px] font-[700] text-[#2C2C2C]">{label}</span>
+        <span className="text-[14px] font-[800] text-[#3B6B4A]">{value}</span>
+      </div>
+      <p className="mt-1 text-[12px] text-[#777777]">{description}</p>
     </div>
   );
 }

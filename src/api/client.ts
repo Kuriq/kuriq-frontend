@@ -362,10 +362,20 @@ export interface UserProfile {
   email: string;
   name: string;
   ageGroup?: string;
+  profileIcon?: string;
+  profileColor?: string;
+  createdAt?: string;
 }
 
 export async function getProfile() {
   return request<UserProfile>("/api/v1/users/me");
+}
+
+export async function updateProfile(data: { name: string; profileIcon: string; profileColor: string }) {
+  return request<UserProfile>("/api/v1/users/me", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 }
 
 export async function deleteAccount(password?: string) {
@@ -423,6 +433,8 @@ export interface UserStats {
   totalLearningHours: number;
   streakDays: number;
   completedRoadmapCount: number;
+  totalCommunityPosts: number;
+  totalCommunityComments: number;
 }
 
 export async function getUserStats() {
@@ -466,6 +478,32 @@ export interface UserBadge {
 
 export async function getMyBadges() {
   return request<UserBadge[]>("/api/v1/users/me/badges");
+}
+
+export interface MyCommunityComment {
+  id: string;
+  postId: string;
+  postTitle: string;
+  content: string;
+  anonymous: boolean;
+  parentId: string | null;
+  createdAt: string;
+}
+
+export interface CommunityMyCommentsResponse {
+  content: MyCommunityComment[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+}
+
+export async function getMyCommunityPosts(page = 0, size = 20) {
+  return request<CommunityPostPageResponse>(`/api/v1/posts/me?page=${page}&size=${size}`);
+}
+
+export async function getMyCommunityComments(page = 0, size = 20) {
+  return request<CommunityMyCommentsResponse>(`/api/v1/posts/comments/me?page=${page}&size=${size}`);
 }
 
 // ── Roadmap ───────────────────────────────────────────

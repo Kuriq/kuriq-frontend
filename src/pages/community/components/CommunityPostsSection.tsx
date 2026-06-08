@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { MessageSquarePlus } from "lucide-react";
-import { getCommunityPosts, type CommunityPostPageResponse } from "../../../api/client";
+import { getCommunityPosts, getMyCommunityComments, getMyCommunityPosts, type CommunityPostPageResponse, type CommunityPostSummary } from "../../../api/client";
+import { useAuth } from "../../../context/AuthContext";
 import type { CommunitySort } from "../types";
 import { CommunityEmptyState } from "./CommunityEmptyState";
 import { CommunityPostCard } from "./CommunityPostCard";
 import { CommunitySortTabs } from "./CommunitySortTabs";
 import { getFriendlyCommunityErrorMessage } from "../utils";
 
-export function CommunityPostsSection() {
+export function CommunityPostsSection({ mineOnly = false, commentOnly = false }: { mineOnly?: boolean; commentOnly?: boolean }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [sort, setSort] = useState<CommunitySort>("latest");
   const [page, setPage] = useState(0);
   const [postPage, setPostPage] = useState<CommunityPostPageResponse | null>(null);
@@ -23,7 +25,34 @@ export function CommunityPostsSection() {
     setNeedsLogin(false);
 
     try {
-      const data = await getCommunityPosts({ sort, page, size: 20 });
+      let data: CommunityPostPageResponse;
+
+      if (commentOnly) {
+        const commentData = await getMyCommunityComments(page, 20);
+        const mappedPosts: CommunityPostSummary[] = commentData.content.map((comment) => ({
+          id: comment.postId,
+          title: comment.postTitle,
+          authorName: comment.anonymous ? "익명" : (user?.name ?? "나"),
+          anonymous: comment.anonymous,
+          viewCount: 0,
+          likeCount: 0,
+          commentCount: 0,
+          createdAt: comment.createdAt,
+        }));
+
+        data = {
+          content: mappedPosts,
+          currentPage: commentData.currentPage,
+          totalPages: commentData.totalPages,
+          totalElements: commentData.totalElements,
+          hasNext: commentData.hasNext,
+        };
+      } else if (mineOnly) {
+        data = await getMyCommunityPosts(page, 20);
+      } else {
+        data = await getCommunityPosts({ sort, page, size: 20 });
+      }
+
       setPostPage(data);
     } catch (err) {
       const message = getFriendlyCommunityErrorMessage(err, "게시글을 불러오지 못했어요.");
@@ -33,13 +62,24 @@ export function CommunityPostsSection() {
     } finally {
       setLoading(false);
     }
-  }, [page, sort]);
+  }, [commentOnly, mineOnly, page, sort, user?.name]);
 
   useEffect(() => {
     void loadPosts();
   }, [loadPosts]);
 
   const posts = postPage?.content ?? [];
+  const title = useMemo(() => {
+    if (commentOnly) return "작성한 댓글";
+    if (mineOnly) return "작성한 글";
+    return "자유게시판";
+  }, [commentOnly, mineOnly]);
+
+  const description = useMemo(() => {
+    if (commentOnly) return "내가 남긴 댓글과 답글을 최근 순으로 확인할 수 있어요.";
+    if (mineOnly) return "내가 작성한 게시글만 모아 볼 수 있어요.";
+    return "질문, 후기, 팁을 편하게 남기고 다른 학습자와 소통해 보세요.";
+  }, [commentOnly, mineOnly]);
 
   return (
     <section className="space-y-6">
@@ -47,21 +87,23 @@ export function CommunityPostsSection() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="mb-2 text-[12px] font-[700] tracking-[0.08em] text-[#3B6B4A]">FREE BOARD</p>
-            <h2 className="mb-2 text-[24px] font-[800] text-[#2C2C2C]">자유게시판</h2>
-            <p className="text-[14px] text-[#777777]">질문, 후기, 팁을 편하게 남기고 다른 학습자와 소통해 보세요.</p>
+            <h2 className="mb-2 text-[24px] font-[800] text-[#2C2C2C]">{title}</h2>
+            <p className="text-[14px] text-[#777777]">{description}</p>
           </div>
 
-          <Link
-            to="/community/create"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#3B6B4A] px-5 py-3 text-[14px] font-[700] text-white transition-colors hover:bg-[#2d5438]"
-          >
-            <MessageSquarePlus className="h-4 w-4" />
-            글 작성하기
-          </Link>
+          {!mineOnly && !commentOnly ? (
+            <Link
+              to="/community/create"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#3B6B4A] px-5 py-3 text-[14px] font-[700] text-white transition-colors hover:bg-[#2d5438]"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              글 작성하기
+            </Link>
+          ) : null}
         </div>
 
         <div className="mt-6 flex flex-col gap-3 border-t border-[#F0EBE2] pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <CommunitySortTabs value={sort} onChange={(next) => { setSort(next); setPage(0); }} />
+          {!mineOnly && !commentOnly ? <CommunitySortTabs value={sort} onChange={(next) => { setSort(next); setPage(0); }} /> : <div />}
           <p className="text-[13px] text-[#888888]">총 {postPage?.totalElements ?? 0}개의 글</p>
         </div>
       </div>
@@ -78,7 +120,7 @@ export function CommunityPostsSection() {
           onAction={needsLogin ? () => navigate("/auth") : () => void loadPosts()}
         />
       ) : posts.length === 0 ? (
-        <CommunityEmptyState title="아직 게시글이 없어요" description="첫 번째 글을 작성해 보세요." />
+        <CommunityEmptyState title={commentOnly ? "작성한 댓글이 없어요" : mineOnly ? "작성한 글이 없어요" : "아직 게시글이 없어요"} description={commentOnly ? "커뮤니티에서 첫 댓글을 남겨 보세요." : mineOnly ? "첫 번째 글을 작성해 보세요." : "첫 번째 글을 작성해 보세요."} />
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (

@@ -9,6 +9,8 @@ import type { CommunityTab } from "./community/types";
 export default function CommunityPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = useMemo<CommunityTab>(() => searchParams.get("tab") === "reviews" ? "reviews" : "posts", [searchParams]);
+  const mineOnly = searchParams.get("mine") === "true";
+  const commentOnly = searchParams.get("comments") === "me";
 
   const handleTabChange = (nextTab: CommunityTab) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -32,7 +34,7 @@ export default function CommunityPage() {
 
           <CommunitySectionTabs value={activeTab} onChange={handleTabChange} />
 
-          {activeTab === "posts" ? <CommunityPostsSection /> : <CommunityReviewSection />}
+          {activeTab === "posts" ? <CommunityPostsSection mineOnly={mineOnly} commentOnly={commentOnly} /> : <CommunityReviewSection />}
         </div>
       </main>
     </div>

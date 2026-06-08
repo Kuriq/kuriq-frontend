@@ -19,7 +19,7 @@ export function Navigation({ activeMenu = "홈" }: NavigationProps) {
     { label: "장소 탐색", path: "/learning-spaces" },
     { label: "커뮤니티", path: "/community" },
     { label: "마이페이지", path: "/mypage" },
-    { label: "알림 설정", path: "/notifications", icon: true },
+    { label: "설정", path: "/notifications", icon: true },
   ];
 
   const handleLogout = async () => {
