@@ -36,9 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((profile) => {
           setUser(profile);
         })
-        .catch(() => {
-          // 다시 확인 — login()이 이미 토큰을 저장했을 수 있음
+        .catch((err) => {
+          console.error("💥 마운트 useEffect catch:", err);
           const currentToken = localStorage.getItem("accessToken");
+          console.log("💥 현재 localStorage token:", currentToken?.substring(0, 20));
+          // 다시 확인 — login()이 이미 토큰을 저장했을 수 있음
           if (!currentToken) {
             // 토큰이 유효하지 않으면 제거
             localStorage.removeItem("accessToken");
