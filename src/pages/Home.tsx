@@ -42,11 +42,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-      {/* 디버그용 — 확인 후 삭제 */}
-      <div style={{position:'fixed',top:0,left:0,zIndex:9999,background:'red',color:'white',padding:'4px',fontSize:'12px'}}>
-        isAuth: {String(isAuthenticated)} | token: {localStorage.getItem('accessToken')?.substring(0,10) ?? 'none'}
-      </div>
-
       <Navigation activeMenu="홈" />
 
       <main className="flex-1 flex items-center justify-center px-8 py-16">
