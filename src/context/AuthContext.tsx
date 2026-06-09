@@ -22,44 +22,27 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessToken] = useState<string | null>(() => {
-    const token = localStorage.getItem("accessToken");
-    console.log("🏁 useState 초기값:", token?.substring(0, 20) ?? "null");
-    return token;
-  });
+  const [accessToken, setAccessToken] = useState<string | null>(() =>
+    localStorage.getItem("accessToken")
+  );
   const [user, setUser] = useState<UserProfile | null>(null);
-  // 토큰이 있을 때만 로딩 상태로 시작
-  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem("accessToken"));
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 마운트 시 한 번만 실행 — cancelled 플래그로 login()과 충돌 방지
+  // 앱 최초 로드 시 토큰 검증
   useEffect(() => {
-    let cancelled = false;
     const token = localStorage.getItem("accessToken");
-    if (token) {
-      getProfile()
-        .then((profile) => {
-          if (!cancelled) setUser(profile);
-        })
-        .catch((err) => {
-          if (cancelled) return; // login()이 이미 완료됐으면 무시
-          console.error("💥 마운트 useEffect catch:", err);
-          const currentToken = localStorage.getItem("accessToken");
-          console.log("💥 현재 localStorage token:", currentToken?.substring(0, 20));
-          // 토큰이 유효하지 않으면 제거
-          if (!currentToken) {
-            localStorage.removeItem("accessToken");
-            setAccessToken(null);
-            setUser(null);
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setIsLoading(false);
-        });
-    } else {
+    if (!token) {
       setIsLoading(false);
+      return;
     }
-    return () => { cancelled = true; };
-  }, []); // 빈 배열 → 마운트 시 한 번만
+    getProfile()
+      .then((profile) => setUser(profile))
+      .catch(() => {
+        localStorage.removeItem("accessToken");
+        setAccessToken(null);
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const refreshUser = useCallback(async () => {
     const token = localStorage.getItem("accessToken");
@@ -81,21 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    console.log("1️⃣ apiLogin 호출");
     const res = await apiLogin(email, password);
-    console.log("2️⃣ apiLogin 완료, accessToken:", res.accessToken?.substring(0, 20));
     localStorage.setItem("accessToken", res.accessToken);
-    console.log("3️⃣ localStorage 저장 완료");
-    try {
-      const profile = await getProfile();
-      console.log("4️⃣ getProfile 완료");
-      setUser(profile);
-    } catch (e) {
-      console.error("❌ getProfile 실패:", e);
-    }
-    console.log("5️⃣ setAccessToken 호출");
+    const profile = await getProfile().catch(() => null);
+    if (profile) setUser(profile);
     setAccessToken(res.accessToken);
-    console.log("6️⃣ login 완료");
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string, ageGroup?: string) => {
@@ -116,7 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated: !!accessToken, isLoading, accessToken, user, login, signup, logout, setUserProfile: setUser, refreshUser }}>
-      {console.log("🔍 accessToken state:", accessToken?.substring(0, 20) ?? "null") as any}
       {children}
     </AuthContext.Provider>
   );
