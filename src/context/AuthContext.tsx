@@ -22,9 +22,16 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessToken] = useState<string | null>(() =>
+  const [accessToken, setAccessTokenRaw] = useState<string | null>(() =>
     localStorage.getItem("accessToken")
   );
+
+  // setAccessToken 호출 위치 추적
+  const setAccessToken = useCallback((val: string | null) => {
+    console.error("🔑 setAccessToken 호출됨:", val?.substring(0, 20) ?? "null", new Error().stack);
+    setAccessTokenRaw(val);
+  }, []);
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -102,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated: !!accessToken, isLoading, accessToken, user, login, signup, logout, setUserProfile: setUser, refreshUser }}>
-      {console.log("🔍 accessToken state:", accessToken) as any}
+      {console.log("🔍 accessToken state:", accessToken?.substring(0, 20) ?? "null") as any}
       {children}
     </AuthContext.Provider>
   );
