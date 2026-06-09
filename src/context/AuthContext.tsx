@@ -22,16 +22,9 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessTokenRaw] = useState<string | null>(() =>
+  const [accessToken, setAccessToken] = useState<string | null>(() =>
     localStorage.getItem("accessToken")
   );
-
-  // setAccessToken 호출 위치 추적
-  const setAccessToken = useCallback((val: string | null) => {
-    console.error("🔑 setAccessToken 호출됨:", val?.substring(0, 20) ?? "null", new Error().stack);
-    setAccessTokenRaw(val);
-  }, []);
-
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(profile);
   }, []);
 
+  // 다른 탭에서 로그아웃 시 동기화
   useEffect(() => {
     const handler = (e: StorageEvent) => {
       if (e.key === "accessToken") setAccessToken(e.newValue);
@@ -96,7 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [login]);
 
   const logout = useCallback(async () => {
-    console.error("logout 호출됨!", new Error().stack); // 호출 위치 추적
     try {
       await apiLogout();
     } catch {
@@ -109,7 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated: !!accessToken, isLoading, accessToken, user, login, signup, logout, setUserProfile: setUser, refreshUser }}>
-      {console.log("🔍 accessToken state:", accessToken?.substring(0, 20) ?? "null") as any}
       {children}
     </AuthContext.Provider>
   );
