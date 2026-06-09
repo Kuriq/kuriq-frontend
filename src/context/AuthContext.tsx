@@ -22,9 +22,11 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessToken] = useState<string | null>(() =>
-    localStorage.getItem("accessToken")
-  );
+  const [accessToken, setAccessToken] = useState<string | null>(() => {
+    const token = localStorage.getItem("accessToken");
+    console.log("🏁 useState 초기값:", token?.substring(0, 20) ?? "null");
+    return token;
+  });
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
