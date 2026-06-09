@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getProfile()
       .then((profile) => setUser(profile))
       .catch(() => {
+        // 토큰이 유효하지 않으면 제거
         localStorage.removeItem("accessToken");
         setAccessToken(null);
       })
@@ -54,10 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(profile);
   }, []);
 
-  // 다른 탭에서 로그아웃 시 동기화
+  // 다른 탭에서 로그아웃(토큰 삭제)한 경우에만 동기화 — 로그인은 간섭 안 함
   useEffect(() => {
     const handler = (e: StorageEvent) => {
-      if (e.key === "accessToken") setAccessToken(e.newValue);
+      if (e.key === "accessToken" && e.newValue === null) {
+        setAccessToken(null);
+        setUser(null);
+      }
     };
     window.addEventListener("storage", handler);
     return () => window.removeEventListener("storage", handler);
