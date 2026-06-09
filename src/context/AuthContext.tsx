@@ -37,10 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(profile);
         })
         .catch(() => {
-          // 토큰이 유효하지 않으면 제거
-          localStorage.removeItem("accessToken");
-          setAccessToken(null);
-          setUser(null);
+          // 다시 확인 — login()이 이미 토큰을 저장했을 수 있음
+          const currentToken = localStorage.getItem("accessToken");
+          if (!currentToken) {
+            // 토큰이 유효하지 않으면 제거
+            localStorage.removeItem("accessToken");
+            setAccessToken(null);
+            setUser(null);
+          }
         })
         .finally(() => setIsLoading(false));
     } else {
@@ -85,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [login]);
 
   const logout = useCallback(async () => {
-    console.error("🚨 logout 호출됨!", new Error().stack); // 호출 위치 추적
+    console.error("logout 호출됨!", new Error().stack); // 호출 위치 추적
     try {
       await apiLogout();
     } catch {
