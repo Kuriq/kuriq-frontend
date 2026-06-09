@@ -28,7 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return token;
   });
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // 토큰이 있을 때만 로딩 상태로 시작
+  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem("accessToken"));
 
   // 마운트 시 한 번만 실행 — cancelled 플래그로 login()과 충돌 방지
   useEffect(() => {
@@ -94,7 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     console.log("5️⃣ setAccessToken 호출");
     setAccessToken(res.accessToken);
-    setIsLoading(false);
     console.log("6️⃣ login 완료");
   }, []);
 
