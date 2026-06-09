@@ -72,16 +72,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    console.log("1️⃣ apiLogin 호출");
     const res = await apiLogin(email, password);
-    localStorage.setItem("accessToken", res.accessToken); // 먼저 저장 → getProfile이 토큰 읽을 수 있음
+    console.log("2️⃣ apiLogin 완료, accessToken:", res.accessToken?.substring(0, 20));
+    localStorage.setItem("accessToken", res.accessToken);
+    console.log("3️⃣ localStorage 저장 완료");
     try {
-      const profile = await getProfile(); // localStorage에서 토큰 읽어서 호출
+      const profile = await getProfile();
+      console.log("4️⃣ getProfile 완료");
       setUser(profile);
     } catch (e) {
-      console.error("❌ getProfile 실패:", e); // 실패해도 로그인은 유지
+      console.error("❌ getProfile 실패:", e);
     }
-    setAccessToken(res.accessToken); // getProfile 성공/실패 상관없이 반드시 실행
+    console.log("5️⃣ setAccessToken 호출");
+    setAccessToken(res.accessToken);
     setIsLoading(false);
+    console.log("6️⃣ login 완료");
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string, ageGroup?: string) => {
@@ -102,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated: !!accessToken, isLoading, accessToken, user, login, signup, logout, setUserProfile: setUser, refreshUser }}>
+      {console.log("🔍 accessToken state:", accessToken?.substring(0, 20) ?? "null") as any}
       {children}
     </AuthContext.Provider>
   );
