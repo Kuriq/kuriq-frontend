@@ -30,30 +30,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 마운트 시 한 번만 실행 — accessToken 변경 시 재실행 안 함
+  // 마운트 시 한 번만 실행 — cancelled 플래그로 login()과 충돌 방지
   useEffect(() => {
+    let cancelled = false;
     const token = localStorage.getItem("accessToken");
     if (token) {
       getProfile()
         .then((profile) => {
-          setUser(profile);
+          if (!cancelled) setUser(profile);
         })
         .catch((err) => {
+          if (cancelled) return; // login()이 이미 완료됐으면 무시
           console.error("💥 마운트 useEffect catch:", err);
           const currentToken = localStorage.getItem("accessToken");
           console.log("💥 현재 localStorage token:", currentToken?.substring(0, 20));
-          // 다시 확인 — login()이 이미 토큰을 저장했을 수 있음
+          // 토큰이 유효하지 않으면 제거
           if (!currentToken) {
-            // 토큰이 유효하지 않으면 제거
             localStorage.removeItem("accessToken");
             setAccessToken(null);
             setUser(null);
           }
         })
-        .finally(() => setIsLoading(false));
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
     } else {
       setIsLoading(false);
     }
+    return () => { cancelled = true; };
   }, []); // 빈 배열 → 마운트 시 한 번만
 
   const refreshUser = useCallback(async () => {
