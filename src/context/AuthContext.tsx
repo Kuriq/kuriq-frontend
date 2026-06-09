@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 토큰이 유효하지 않으면 제거
         localStorage.removeItem("accessToken");
         setAccessToken(null);
+        setUser(null);
       })
       .finally(() => setIsLoading(false));
   }, []);
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const profile = await getProfile().catch(() => null);
     if (profile) setUser(profile);
     setAccessToken(res.accessToken);
+    setIsLoading(false);
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string, ageGroup?: string) => {
