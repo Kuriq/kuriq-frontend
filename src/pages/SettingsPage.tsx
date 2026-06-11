@@ -141,9 +141,10 @@ export default function SettingsPage() {
       const isLocal = !profile?.authProvider || profile.authProvider === "LOCAL";
       await deleteAccount(isLocal ? deletePassword : undefined);
       await logout();
-      // navigate 대신 window.location.replace로 URL 완전히 초기화
-      // 소셜 로그인 콜백 URL(?token=...)이 남아있을 경우 재로그인되는 문제 방지
-      window.location.replace("/");
+      // 탈퇴 완료 안내 후 로그인 페이지로 이동
+      // window.location.replace로 URL 완전히 초기화 (소셜 콜백 URL 잔류 방지)
+      alert("탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.");
+      window.location.replace("/auth");
     } catch (e: unknown) {
       setDeleteError(e instanceof Error ? e.message : "탈퇴 중 오류가 발생했습니다.");
     } finally {
