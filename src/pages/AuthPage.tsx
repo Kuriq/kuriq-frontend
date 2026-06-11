@@ -24,10 +24,15 @@ export default function AuthPage() {
   // 소셜 로그인 콜백 처리: 백엔드에서 /auth?token=... 으로 리다이렉트되면 토큰 저장
   useEffect(() => {
     const token = searchParams.get("token");
+    const isNewUser = searchParams.get("isNewUser");
     if (token) {
       localStorage.setItem("accessToken", token);
       // localStorage 저장 후 약간 딜레이 후 이동
       setTimeout(() => {
+        // 신규 가입(탈퇴 후 재가입 포함) 시 안내 메시지 표시
+        if (isNewUser === "true") {
+          alert("새 계정으로 가입되었습니다.\n이전 학습 데이터는 복구되지 않아요.");
+        }
         window.location.replace("/");
       }, 100);
     }
