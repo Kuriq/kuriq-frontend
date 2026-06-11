@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, Palette, Save, UserRound } from "lucide-react";
+import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
-import { getNotificationSettings, getProfile, updateNotificationSettings, updateProfile, type NotificationSettings, type UserProfile } from "../api/client";
+import { deleteAccount, getNotificationSettings, getProfile, updateNotificationSettings, updateProfile, type NotificationSettings, type UserProfile } from "../api/client";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { useAuth } from "../context/AuthContext";
 
@@ -33,7 +34,8 @@ function formatDisplayToTime(display: string): string {
 type SettingsTab = "profile" | "notifications";
 
 export default function SettingsPage() {
-  const { setUserProfile } = useAuth();
+  const { setUserProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileName, setProfileName] = useState("");
@@ -52,6 +54,12 @@ export default function SettingsPage() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 회원 탈퇴 관련 state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const days = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
   const times = [
@@ -123,6 +131,23 @@ export default function SettingsPage() {
       setError("알림 설정 저장에 실패했습니다.");
     } finally {
       setNotificationSaving(false);
+    }
+  };
+
+  // 회원 탈퇴 처리
+  const handleDeleteAccount = async () => {
+    setDeleteError("");
+    setDeleteLoading(true);
+    try {
+      // 소셜 계정은 비밀번호 없이, 일반 계정은 비밀번호 전달
+      const isLocal = !profile?.authProvider || profile.authProvider === "LOCAL";
+      await deleteAccount(isLocal ? deletePassword : undefined);
+      await logout();
+      navigate("/");
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : "탈퇴 중 오류가 발생했습니다.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -220,6 +245,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* 내 설정 저장 버튼 */}
               <div className="flex justify-end">
                 <button
                   type="button"
@@ -229,6 +255,17 @@ export default function SettingsPage() {
                 >
                   <Save className="h-4 w-4" />
                   {profileSaving ? "저장 중..." : "내 설정 저장"}
+                </button>
+              </div>
+
+              {/* 회원 탈퇴 버튼 */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="text-[13px] text-[#AAAAAA] underline hover:text-[#E05252]"
+                >
+                  회원 탈퇴
                 </button>
               </div>
             </section>
@@ -258,6 +295,57 @@ export default function SettingsPage() {
           )}
         </div>
       </main>
+
+      {/* 회원 탈퇴 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="mb-2 text-[18px] font-[800] text-[#2C2C2C]">정말 탈퇴하시겠어요?</h2>
+            <p className="mb-5 text-[13px] text-[#777777] leading-relaxed">
+              탈퇴하면 학습 기록, 로드맵, 뱃지 등 모든 데이터가 삭제되며 복구할 수 없어요.
+            </p>
+            {/* 일반 회원만 비밀번호 입력 — 소셜 회원은 확인 버튼만 */}
+            {(!profile?.authProvider || profile.authProvider === "LOCAL") && (
+              <div className="mb-4">
+                <label className="mb-1.5 block text-[13px] font-[600] text-[#2C2C2C]">
+                  본인 확인을 위해 비밀번호를 입력해 주세요
+                </label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={e => setDeletePassword(e.target.value)}
+                  placeholder="비밀번호 입력"
+                  className="w-full rounded-xl border border-[#E5E0D8] px-4 py-2.5 text-[14px] outline-none focus:border-[#3B6B4A]"
+                />
+              </div>
+            )}
+            {deleteError && (
+              <p className="mb-3 text-[13px] text-[#E05252]">{deleteError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletePassword("");
+                  setDeleteError("");
+                }}
+                className="flex-1 rounded-xl border border-[#E5E0D8] py-2.5 text-[14px] font-[600] text-[#555555] hover:bg-[#F8F6F1]"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+                className="flex-1 rounded-xl bg-[#E05252] py-2.5 text-[14px] font-[600] text-white hover:bg-[#C94040] disabled:opacity-50"
+              >
+                {deleteLoading ? "처리 중..." : "탈퇴하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
