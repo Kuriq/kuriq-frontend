@@ -365,6 +365,7 @@ export interface UserProfile {
   profileIcon?: string;
   profileColor?: string;
   createdAt?: string;
+  authProvider?: string; // LOCAL | GOOGLE | NAVER | KAKAO (회원 탈퇴 시 소셜 계정 여부 판단용)
 }
 
 export async function getProfile() {
