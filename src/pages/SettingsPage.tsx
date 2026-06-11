@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, Palette, Save, UserRound } from "lucide-react";
-import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { deleteAccount, getNotificationSettings, getProfile, updateNotificationSettings, updateProfile, type NotificationSettings, type UserProfile } from "../api/client";
 import { OwlMascot } from "../components/common/OwlMascot";
@@ -35,7 +34,6 @@ type SettingsTab = "profile" | "notifications";
 
 export default function SettingsPage() {
   const { setUserProfile, logout } = useAuth();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileName, setProfileName] = useState("");
@@ -143,7 +141,9 @@ export default function SettingsPage() {
       const isLocal = !profile?.authProvider || profile.authProvider === "LOCAL";
       await deleteAccount(isLocal ? deletePassword : undefined);
       await logout();
-      navigate("/");
+      // navigate 대신 window.location.replace로 URL 완전히 초기화
+      // 소셜 로그인 콜백 URL(?token=...)이 남아있을 경우 재로그인되는 문제 방지
+      window.location.replace("/");
     } catch (e: unknown) {
       setDeleteError(e instanceof Error ? e.message : "탈퇴 중 오류가 발생했습니다.");
     } finally {
