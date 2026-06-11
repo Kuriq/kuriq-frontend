@@ -7,6 +7,7 @@ import { getSocialAuthorizeUrl } from "../api/client";
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, signup } = useAuth();
   const [activeTab, setActiveTab] = useState("signup");
   const [signupEmail, setSignupEmail] = useState("");
