@@ -26,7 +26,10 @@ export default function AuthPage() {
     const token = searchParams.get("token");
     if (token) {
       localStorage.setItem("accessToken", token);
-      window.location.replace("/");
+      // localStorage 저장 후 약간 딜레이 후 이동
+      setTimeout(() => {
+        window.location.replace("/");
+      }, 100);
     }
   }, []);
 
