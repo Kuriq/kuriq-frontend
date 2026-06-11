@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
@@ -11,6 +11,19 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+
+  // 신규 가입 안내 토스트 state
+  const [showNewUserToast, setShowNewUserToast] = useState(false);
+
+  // 소셜 신규 가입 후 홈 진입 시 토스트 표시
+  useEffect(() => {
+    if (sessionStorage.getItem("showNewUserToast") === "true") {
+      sessionStorage.removeItem("showNewUserToast");
+      setShowNewUserToast(true);
+      // 4초 후 자동으로 사라짐
+      setTimeout(() => setShowNewUserToast(false), 4000);
+    }
+  }, []);
 
   const suggestionChips = [
     "🎯 AI·데이터 입문",
@@ -103,6 +116,13 @@ export default function Home() {
           </p>
         </div>
       </main>
+
+      {/* 신규 가입 안내 토스트 — 소셜 로그인으로 새 계정 생성 시 표시 */}
+      {showNewUserToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl bg-[#2C2C2C] px-5 py-3.5 shadow-lg animate-fade-in">
+          <span className="text-[14px] text-white whitespace-nowrap">새 계정으로 가입되었습니다. 이전 데이터는 복구되지 않아요.</span>
+        </div>
+      )}
     </div>
   );
 }
