@@ -23,8 +23,12 @@ export default function SearchPage() {
   const [page, setPage] = useState(0);
   const size = 20;
   const hasHandledInitialFilterEffect = useRef(false);
+  const latestRequestId = useRef(0);
+
+  const isShowingAllCourses = !searchQuery.trim() && !platform && !category;
 
   const fetchCourses = useCallback(async (pageNum = 0) => {
+    const requestId = ++latestRequestId.current;
     setLoading(true);
     try {
       const res = await searchCourses({
@@ -35,15 +39,22 @@ export default function SearchPage() {
         page: pageNum,
         size,
       });
+
+      if (requestId !== latestRequestId.current) return;
+
       setResults(res.content);
       setTotalElements(res.totalElements);
       setPage(res.currentPage);
     } catch (err) {
+      if (requestId !== latestRequestId.current) return;
+
       console.error("강좌 검색 실패:", err);
       setResults([]);
       setTotalElements(0);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestId.current) {
+        setLoading(false);
+      }
     }
   }, [searchQuery, platform, category, sortBy]);
 
@@ -66,12 +77,13 @@ export default function SearchPage() {
     }
 
     setPage(0);
-    fetchCourses(0);
-  }, [platform, category, fetchCourses]);
+    void fetchCourses(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platform, category, sortBy]);
 
   // 초기 로딩 시 전체 강좌 조회
   useEffect(() => {
-    fetchCourses(0);
+    void fetchCourses(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -97,7 +109,7 @@ export default function SearchPage() {
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <FilterDropdownButton
               label="플랫폼"
-              options={["온국민평생배움터", "K-MOOC", "KOCW", "전국평생학습"]}
+              options={["온국민평생배움터", "K-MOOC", "KOCW", "서울시평생학습포털"]}
               value={platform}
               onChange={setPlatform}
             />
@@ -135,7 +147,11 @@ export default function SearchPage() {
 
           <div className="flex items-center justify-between mb-5 pt-4">
             <h2 className="text-[16px] text-[#2C2C2C] font-[600]">
-              {loading ? "검색 중..." : `총 ${totalElements}개의 강좌를 찾았어요`}
+              {loading
+                ? "검색 중..."
+                : isShowingAllCourses
+                  ? `전체 ${totalElements}개의 강좌가 있어요`
+                  : `총 ${totalElements}개의 강좌를 찾았어요`}
             </h2>
             <SortMenu value={sortBy} onChange={setSortBy} />
           </div>
