@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { useAuth } from "../context/AuthContext";
@@ -19,6 +19,15 @@ export default function AuthPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 소셜 로그인 콜백 처리: 백엔드에서 /auth?token=... 으로 리다이렉트되면 토큰 저장
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      localStorage.setItem("accessToken", token);
+      window.location.replace("/");
+    }
+  }, []);
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
