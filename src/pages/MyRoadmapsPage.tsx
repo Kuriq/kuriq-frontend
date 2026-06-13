@@ -71,7 +71,7 @@ export default function MyRoadmapsPage() {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
         <Navigation activeMenu="로드맵" />
-        <main className="flex-1 px-8 py-8 flex items-center justify-center">
+        <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8 flex items-center justify-center">
           <p className="text-[16px] text-[#777777]">로드맵을 불러오는 중...</p>
         </main>
       </div>
@@ -82,7 +82,7 @@ export default function MyRoadmapsPage() {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
         <Navigation activeMenu="로드맵" />
-        <main className="flex-1 px-8 py-8">
+        <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8">
           <div className="max-w-[1000px] mx-auto">
             <div className="flex flex-col items-center justify-center" style={{ minHeight: '60vh' }}>
               <img src={kuriDefault} alt="" className="mb-6" style={{ width: 120, height: 120 }} />
@@ -113,7 +113,7 @@ export default function MyRoadmapsPage() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="로드맵" />
 
-      <main className="flex-1 px-8 py-8">
+      <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8 page-enter">
         <div className="max-w-[1000px] mx-auto">
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
@@ -155,7 +155,7 @@ export default function MyRoadmapsPage() {
               </div>
 
               <div
-                className="bg-white rounded-2xl p-6"
+                className="bg-white rounded-2xl p-6 card-hover"
                 style={{ border: '2px solid #3B6B4A', boxShadow: '0 2px 8px rgba(59, 107, 74, 0.08)' }}
               >
                 <div className="flex items-start gap-3 mb-4">

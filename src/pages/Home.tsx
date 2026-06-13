@@ -57,8 +57,8 @@ export default function Home() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="홈" />
 
-      <main className="flex-1 flex items-center justify-center px-8 py-16">
-        <div className="max-w-[640px] w-full flex flex-col items-center">
+      <main className="flex-1 flex items-center justify-center px-4 py-10 sm:px-8 sm:py-16">
+        <div className="max-w-[640px] w-full flex flex-col items-center page-enter">
           <div className="mb-6">
             <OwlMascot size={96} variant="normal" />
           </div>
@@ -71,7 +71,7 @@ export default function Home() {
             배우고 싶은 것을 편하게 말씀해 주세요. 공공 교육 강좌로 맞춤 학습 로드맵을 만들어 드릴게요.
           </p>
 
-          <div className="w-full max-w-[560px] bg-white rounded-[20px] border border-[#E5E0D8] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-6">
+          <div className="w-full max-w-[560px] bg-white rounded-[20px] border border-[#E5E0D8] p-4 sm:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-6">
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}

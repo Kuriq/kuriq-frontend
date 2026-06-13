@@ -96,7 +96,7 @@ export default function SearchPage() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="강좌 검색" />
 
-      <main className="flex-1 px-8 py-12">
+      <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12 page-enter">
         <div className="max-w-[1000px] mx-auto">
           <div className="mb-6">
             <SearchInputBar
@@ -177,7 +177,9 @@ export default function SearchPage() {
           ) : (
             <div className="space-y-4">
               {results.map((course) => (
-                <SearchResultCard key={course.id} {...course} />
+                <div key={course.id} className="card-enter">
+                  <SearchResultCard {...course} />
+                </div>
               ))}
             </div>
           )}
@@ -389,7 +391,7 @@ function SearchResultCard({
   const displayPlatform = getPlatformLabel(platform);
 
   return (
-    <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors">
+    <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors card-hover">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <h3 className="text-[16px] font-[800] text-[#2C2C2C] mb-1">{title}</h3>

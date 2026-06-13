@@ -50,7 +50,7 @@ export default function MyPage() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="마이페이지" />
 
-      <main className="flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-8 page-enter">
         <div className="mx-auto max-w-[1040px]">
           <div className="mb-8 flex flex-col gap-4 rounded-[24px] border border-[#E5E0D8] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="flex items-center gap-4">

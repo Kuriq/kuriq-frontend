@@ -108,30 +108,28 @@ export default function LoadingRoadmapPage() {
       style={{ backgroundColor: '#F8F6F1' }}
     >
       <div className="flex flex-col items-center">
-        {/* Quri Mascot with Thinking Expression + Pulse Animation */}
+        {/* Quri Mascot with Pulse Rings */}
         <div className="relative mb-8 md:mb-12">
-          {/* Pulse rings */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div
-              className="absolute rounded-full animate-pulse-ring"
+              className="absolute rounded-full"
               style={{
                 width: '140px',
                 height: '140px',
-                backgroundColor: 'rgba(232, 152, 94, 0.1)',
+                backgroundColor: 'rgba(232, 152, 94, 0.12)',
                 animation: 'pulseRing 2s ease-out infinite'
               }}
             />
             <div
-              className="absolute rounded-full animate-pulse-ring-delayed"
+              className="absolute rounded-full"
               style={{
-                width: '160px',
-                height: '160px',
-                backgroundColor: 'rgba(232, 152, 94, 0.08)',
-                animation: 'pulseRing 2s ease-out infinite 0.5s'
+                width: '170px',
+                height: '170px',
+                backgroundColor: 'rgba(232, 152, 94, 0.07)',
+                animation: 'pulseRing 2s ease-out infinite 0.6s'
               }}
             />
           </div>
-
           <img
             src={kuriLoading}
             alt=""
@@ -183,14 +181,14 @@ export default function LoadingRoadmapPage() {
       <style>{`
         @keyframes pulseRing {
           0% {
-            transform: scale(0.8);
-            opacity: 0.6;
+            transform: scale(0.85);
+            opacity: 0.7;
           }
-          50% {
-            opacity: 0.3;
+          60% {
+            opacity: 0.2;
           }
           100% {
-            transform: scale(1.2);
+            transform: scale(1.25);
             opacity: 0;
           }
         }

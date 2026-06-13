@@ -65,8 +65,8 @@ export default function RoadmapResultPage() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="로드맵" />
 
-      <main className="flex-1 px-8 py-12">
-        <div className="max-w-[800px] mx-auto">
+      <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12">
+        <div className="max-w-[800px] mx-auto page-enter">
           <div className="flex items-start gap-4 mb-8">
             <div className="flex-shrink-0">
               <OwlMascot size={40} variant="winking" />
@@ -95,7 +95,7 @@ export default function RoadmapResultPage() {
             ))}
           </div>
 
-          <div className="flex justify-center gap-4 pb-12">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pb-12">
             <button
               type="button"
               onClick={() => navigate("/dashboard", { state: { roadmapId: roadmap.id } })}
@@ -132,7 +132,7 @@ function RoadmapWeekSection({ week }: { week: RoadmapWeek }) {
         </div>
       </div>
 
-      <div className="ml-[54px] space-y-3">
+      <div className="ml-6 sm:ml-[54px] space-y-3">
         {week.items.map((item) => (
           <RoadmapCourseCard key={item.id} item={item} />
         ))}
@@ -152,7 +152,7 @@ function RoadmapCourseCard({ item }: { item: RoadmapItem }) {
   const displayPlatform = getPlatformLabel(course.platform);
 
   return (
-    <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors">
+    <div className="bg-white border border-[#E5E0D8] rounded-2xl p-5 hover:border-[#3B6B4A] transition-colors card-hover">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <h4 className="text-[14px] font-[600] text-[#2C2C2C] mb-3">{course.title}</h4>
