@@ -14,6 +14,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     credentials: "include",
   });
 
+  const parseResponse = async (response: Response): Promise<T> => {
+    if (response.status === 204) return undefined as T;
+    return response.json();
+  };
+
   if (res.status === 401 || res.status === 403) {
     // 토큰 만료 또는 인증 실패 → refresh 시도
     const refreshed = await refreshToken();
@@ -25,7 +30,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       credentials: "include",
     });
     if (!retry.ok) throw new Error(`HTTP ${retry.status}`);
-    return retry.json();
+    return parseResponse(retry);
   }
 
   if (!res.ok) {
@@ -33,9 +38,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new Error(body?.message || `HTTP ${res.status}`);
   }
 
-  // 204 No Content
-  if (res.status === 204) return undefined as T;
-  return res.json();
+  return parseResponse(res);
 }
 
 // ── Auth ──────────────────────────────────────────────

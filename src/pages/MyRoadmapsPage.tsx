@@ -312,9 +312,7 @@ export default function MyRoadmapsPage() {
                       style={{ color: '#777777' }}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8F6F1'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      onClick={() => {
-                        if (confirm("삭제하시겠습니까?")) handleDelete(roadmap.id);
-                      }}
+                      onClick={() => handleDelete(roadmap.id)}
                     >
                       <MoreVertical size={16} />
                     </button>
