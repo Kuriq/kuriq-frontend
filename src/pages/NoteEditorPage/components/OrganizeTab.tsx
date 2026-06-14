@@ -51,7 +51,7 @@ export function OrganizeTab({
                 <span
                   key={index}
                   className="px-3 py-1.5 rounded-full text-xs font-medium"
-                  style={{ backgroundColor: "#E8E4F3", color: "#6B4F9C" }}
+                  style={{ backgroundColor: "#E8F0EA", color: "#3B6B4A" }}
                 >
                   {keyword}
                 </span>

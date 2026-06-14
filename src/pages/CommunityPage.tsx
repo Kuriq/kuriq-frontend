@@ -23,7 +23,7 @@ export default function CommunityPage() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="커뮤니티" />
 
-      <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
+      <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 page-enter">
         <div className="mx-auto w-full max-w-[1080px]">
           <div className="mb-8">
             <div>

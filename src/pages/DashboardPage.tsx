@@ -78,7 +78,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
         <Navigation activeMenu="대시보드" />
-        <main className="flex-1 px-8 py-12 flex items-center justify-center">
+        <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12 flex items-center justify-center">
           <p className="text-[16px] text-[#777777]">대시보드를 불러오는 중...</p>
         </main>
       </div>
@@ -89,7 +89,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
         <Navigation activeMenu="대시보드" />
-        <main className="flex-1 px-8 py-12 flex flex-col items-center justify-center">
+        <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12 flex flex-col items-center justify-center">
           <p className="text-[16px] text-[#777777] mb-4">{error || "활성화된 로드맵이 없습니다."}</p>
           <button
             onClick={() => navigate("/")}
@@ -112,7 +112,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
         <Navigation activeMenu="대시보드" />
-        <main className="flex-1 px-8 py-12 flex flex-col items-center justify-center">
+        <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12 flex flex-col items-center justify-center">
           <p className="text-[16px] text-[#777777] mb-4">주차 정보를 불러올 수 없습니다.</p>
           <button
             onClick={() => navigate("/")}
@@ -206,7 +206,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="대시보드" />
 
-      <main className="flex-1 px-8 py-12">
+      <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12">
         <div className="max-w-[1100px] mx-auto">
           {/* Header row */}
           <div className="flex items-center justify-between mb-6">
@@ -255,9 +255,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Two-column layout */}
-          <div className="flex gap-6">
-            {/* LEFT COLUMN (65%) */}
-            <div style={{ flex: '0 0 65%' }}>
+          <div className="flex flex-col lg:flex-row gap-6 page-enter">
+            {/* LEFT COLUMN */}
+            <div className="w-full lg:w-[65%]">
               {/* Progress Card */}
               <div className="bg-white rounded-2xl p-5 mb-6" style={{ border: '1px solid #E5E0D8' }}>
                 <div className="flex items-center justify-between mb-3">
@@ -296,8 +296,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN (35%) */}
-            <div style={{ flex: '0 0 35%' }}>
+            {/* RIGHT COLUMN */}
+            <div className="w-full lg:w-[35%]">
               <h2 className="font-bold mb-4" style={{ color: '#2C2C2C', fontSize: '16px' }}>
                 📍 전체 로드맵
               </h2>
@@ -490,7 +490,7 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
 
   return (
     <div
-      className="rounded-xl p-4 flex items-center gap-4"
+      className="rounded-xl p-4 flex items-center gap-4 card-hover"
       style={{
         backgroundColor: isCompleted ? '#F0F7ED' : 'white',
         border: `1px solid ${isCompleted ? '#C8E0D0' : '#E5E0D8'}`
@@ -541,7 +541,7 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
         <button
           disabled={loading}
           onClick={handleNoteClick}
-          className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50"
+          className="hidden sm:block px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50"
           style={{ borderColor: '#777777', color: '#777777', backgroundColor: 'transparent' }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8F6F1'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import kuriWink from "../../assets/images/kuri-wink.png";
+import kuriWink from "../assets/images/kuri-wink.png";
 import { useNote } from "./NoteEditorPage/useNote";
 import { useNoteChat } from "./NoteEditorPage/useNoteChat";
 import { useNoteQuiz } from "./NoteEditorPage/useNoteQuiz";
@@ -144,7 +144,23 @@ export default function NoteEditorPage() {
     <div className="min-h-screen" style={{ backgroundColor: "#F8F6F1" }}>
       <Navigation activeMenu="대시보드" />
 
-      <div className="max-w-[1440px] mx-auto px-8 py-6">
+      {/* 모바일 차단 화면 */}
+      <div className="flex md:hidden flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+        <img src={kuriWink} alt="" className="w-20 h-20 mb-5 object-contain" />
+        <h2 className="text-[20px] font-[800] text-[#2C2C2C] mb-2">PC에서만 이용할 수 있어요</h2>
+        <p className="text-[14px] text-[#777777] leading-relaxed max-w-[280px]">
+          노트 에디터는 PC 화면에 최적화되어 있어요. 컴퓨터에서 접속해 주세요.
+        </p>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="mt-6 px-6 py-2.5 rounded-full bg-[#3B6B4A] text-white font-[600] text-[14px] hover:bg-[#2d5438] transition-colors"
+        >
+          대시보드로 돌아가기
+        </button>
+      </div>
+
+      {/* PC 전용 에디터 */}
+      <div className="hidden md:block max-w-[1440px] mx-auto px-8 py-6">
         {/* Back Button */}
         <button
           onClick={() => navigate("/dashboard")}

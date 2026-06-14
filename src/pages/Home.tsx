@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
@@ -11,6 +11,19 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+
+  // 신규 가입 안내 토스트 state
+  const [showNewUserToast, setShowNewUserToast] = useState(false);
+
+  // 소셜 신규 가입 후 홈 진입 시 토스트 표시
+  useEffect(() => {
+    if (sessionStorage.getItem("showNewUserToast") === "true") {
+      sessionStorage.removeItem("showNewUserToast");
+      setShowNewUserToast(true);
+      // 4초 후 자동으로 사라짐
+      setTimeout(() => setShowNewUserToast(false), 4000);
+    }
+  }, []);
 
   const suggestionChips = [
     "🎯 AI·데이터 입문",
@@ -44,8 +57,8 @@ export default function Home() {
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="홈" />
 
-      <main className="flex-1 flex items-center justify-center px-8 py-16">
-        <div className="max-w-[640px] w-full flex flex-col items-center">
+      <main className="flex-1 flex items-center justify-center px-4 py-10 sm:px-8 sm:py-16">
+        <div className="max-w-[640px] w-full flex flex-col items-center page-enter">
           <div className="mb-6">
             <OwlMascot size={96} variant="normal" />
           </div>
@@ -58,7 +71,7 @@ export default function Home() {
             배우고 싶은 것을 편하게 말씀해 주세요. 공공 교육 강좌로 맞춤 학습 로드맵을 만들어 드릴게요.
           </p>
 
-          <div className="w-full max-w-[560px] bg-white rounded-[20px] border border-[#E5E0D8] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-6">
+          <div className="w-full max-w-[560px] bg-white rounded-[20px] border border-[#E5E0D8] p-4 sm:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-6">
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -103,6 +116,13 @@ export default function Home() {
           </p>
         </div>
       </main>
+
+      {/* 신규 가입 안내 토스트 — 소셜 로그인으로 새 계정 생성 시 표시 */}
+      {showNewUserToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl bg-[#2C2C2C] px-5 py-3.5 shadow-lg animate-fade-in">
+          <span className="text-[14px] text-white whitespace-nowrap">새 계정으로 가입되었습니다. 이전 데이터는 복구되지 않아요.</span>
+        </div>
+      )}
     </div>
   );
 }

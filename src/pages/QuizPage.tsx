@@ -127,7 +127,7 @@ export default function QuizPage() {
     const correctCount = results.filter((r) => r.isCorrect).length;
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-        <header className="bg-[#F8F6F1] py-6 px-8 border-b border-[#E5E0D8]">
+        <header className="bg-[#F8F6F1] py-6 px-4 sm:px-8 border-b border-[#E5E0D8]">
           <div className="max-w-[1200px] mx-auto">
             <button
               type="button"
@@ -139,7 +139,7 @@ export default function QuizPage() {
             </button>
           </div>
         </header>
-        <main className="flex-1 px-8 py-12">
+        <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12">
           <div className="max-w-[640px] mx-auto text-center">
             <OwlMascot size={80} variant="winking" />
             <h2 className="text-[28px] font-[800] text-[#2C2C2C] mt-6 mb-2">퀴즈 완료!</h2>
@@ -178,7 +178,7 @@ export default function QuizPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
-      <header className="bg-[#F8F6F1] py-6 px-8 border-b border-[#E5E0D8]">
+      <header className="bg-[#F8F6F1] py-6 px-4 sm:px-8 border-b border-[#E5E0D8]">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center justify-between mb-6">
             <button

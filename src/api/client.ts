@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const BASE_URL = (import.meta.env.VITE_API_URL?.trim() ?? "").replace(/\/+$/, "");
 
 function getHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = { "Content-Type": "application/json", ...extra };
@@ -14,6 +14,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     credentials: "include",
   });
 
+  const parseResponse = async (response: Response): Promise<T> => {
+    if (response.status === 204) return undefined as T;
+    return response.json();
+  };
+
   if (res.status === 401 || res.status === 403) {
     // 토큰 만료 또는 인증 실패 → refresh 시도
     const refreshed = await refreshToken();
@@ -25,7 +30,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       credentials: "include",
     });
     if (!retry.ok) throw new Error(`HTTP ${retry.status}`);
-    return retry.json();
+    return parseResponse(retry);
   }
 
   if (!res.ok) {
@@ -33,9 +38,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new Error(body?.message || `HTTP ${res.status}`);
   }
 
-  // 204 No Content
-  if (res.status === 204) return undefined as T;
-  return res.json();
+  return parseResponse(res);
 }
 
 // ── Auth ──────────────────────────────────────────────
@@ -365,6 +368,7 @@ export interface UserProfile {
   profileIcon?: string;
   profileColor?: string;
   createdAt?: string;
+  authProvider?: string; // LOCAL | GOOGLE | NAVER | KAKAO (회원 탈퇴 시 소셜 계정 여부 판단용)
 }
 
 export async function getProfile() {

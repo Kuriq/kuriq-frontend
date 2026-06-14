@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { useAuth } from "../context/AuthContext";
@@ -7,6 +7,7 @@ import { getSocialAuthorizeUrl } from "../api/client";
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, signup } = useAuth();
   const [activeTab, setActiveTab] = useState("signup");
   const [signupEmail, setSignupEmail] = useState("");
@@ -19,6 +20,27 @@ export default function AuthPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 신규 가입 안내 토스트 state
+  const [showToast, setShowToast] = useState(false);
+
+  // 소셜 로그인 콜백 처리: 백엔드에서 /auth?token=... 으로 리다이렉트되면 토큰 저장
+  useEffect(() => {
+    const token = searchParams.get("token");
+    const isNewUser = searchParams.get("isNewUser");
+    if (token) {
+      localStorage.setItem("accessToken", token);
+      // localStorage 저장 후 약간 딜레이 후 이동
+      setTimeout(() => {
+        if (isNewUser === "true") {
+          // 신규 가입(탈퇴 후 재가입 포함) 시 토스트 메시지 표시 후 홈으로 이동
+          // sessionStorage에 플래그 저장 → 홈에서 토스트 표시
+          sessionStorage.setItem("showNewUserToast", "true");
+        }
+        window.location.replace("/");
+      }, 100);
+    }
+  }, []);
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
