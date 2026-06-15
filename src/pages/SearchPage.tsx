@@ -398,13 +398,14 @@ function SearchResultCard({
           <p className="text-[13px] text-[#777777] mb-3">{institution}</p>
           <div className="flex flex-wrap gap-2">
             <span
-              className={`px-3 py-1 rounded-full text-[11px] font-[600] ${
+              className={`px-3 py-1 rounded-full text-[11px] font-[600] max-w-[140px] truncate ${
                 platformColors[displayPlatform] || platformColors["K-MOOC"]
               }`}
+              title={displayPlatform}
             >
               {displayPlatform}
             </span>
-            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#F3E5F5] text-[#9C27B0]">
+            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#F3E5F5] text-[#9C27B0] max-w-[120px] truncate" title={category}>
               {category}
             </span>
           </div>

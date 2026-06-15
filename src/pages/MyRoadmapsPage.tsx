@@ -249,8 +249,8 @@ export default function MyRoadmapsPage() {
             </div>
           )}
 
-          {/* Filter & Sort */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Filter */}
+          <div className="flex items-center mb-4">
             <div className="flex items-center gap-2">
               {(["all", "completed", "abandoned"] as FilterType[]).map((filter) => (
                 <button
@@ -267,16 +267,6 @@ export default function MyRoadmapsPage() {
                 </button>
               ))}
             </div>
-
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition-colors"
-              style={{ borderColor: '#E5E0D8', color: '#777777', backgroundColor: 'white' }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3B6B4A'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = '#E5E0D8'}
-            >
-              <span>최근 생성순</span>
-              <ChevronDown size={14} />
-            </button>
           </div>
 
           {/* Past Roadmaps */}
