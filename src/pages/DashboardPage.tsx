@@ -25,12 +25,10 @@ export default function DashboardPage() {
       setError(null);
 
       try {
-        // 1. state로 전달받은 roadmapId 우선 사용
         const stateRoadmapId = (location.state as { roadmapId?: string } | null)?.roadmapId;
-        
+
         let roadmapId: string | undefined = stateRoadmapId;
 
-        // 2. 없으면 활성 로드맵 조회
         if (!roadmapId) {
           const myRoadmaps = await getMyRoadmaps(0, 10);
           const active = myRoadmaps.content.find((r) => r.isActive);
@@ -54,10 +52,7 @@ export default function DashboardPage() {
           setCurrentWeekIndex(idx >= 0 ? idx : 0);
 
           try {
-            // 초기 로딩 시 현재 주차의 첫 번째 강좌를 추천 기준으로 전달
-            const currentWeekData = data.weeks.find((w) => w.weekNumber === data.currentWeek);
-            const baseCourseId = currentWeekData?.items?.[0]?.course?.id;
-            const recs = await getRecommendations(roadmapId, baseCourseId);
+            const recs = await getRecommendations(roadmapId);
             if (!cancelled) setRecommendations(recs ?? []);
           } catch {
             // 추천 실패해도 대시보드는 정상 표시
@@ -76,16 +71,6 @@ export default function DashboardPage() {
     loadDashboard();
     return () => { cancelled = true; };
   }, [location.state]);
-
-  // 주차 변경 시 현재 주차 기준으로 추천 강좌 다시 조회
-  useEffect(() => {
-    if (!roadmap) return;
-    const currentWeekData = roadmap.weeks[currentWeekIndex];
-    const baseCourseId = currentWeekData?.items?.[0]?.course?.id;
-    getRecommendations(roadmap.id, baseCourseId)
-      .then((recs) => setRecommendations(recs ?? []))
-      .catch(() => {});
-  }, [currentWeekIndex, roadmap?.id]);
 
   if (loading) {
     return (
@@ -120,7 +105,6 @@ export default function DashboardPage() {
   const nextWeek = currentWeekIndex < roadmap.weeks.length - 1 ? roadmap.weeks[currentWeekIndex + 1] : null;
   const selectedWeekNumber = currentWeek?.weekNumber ?? roadmap.currentWeek;
 
-  // currentWeek가 없으면 에러 처리
   if (!currentWeek) {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
@@ -143,14 +127,12 @@ export default function DashboardPage() {
   weekEndDay.setDate(weekEndDay.getDate() + 6);
   const formatDateShort = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
 
-  // 주차별 완료된 강좌 수 계산
   const totalCompletedItems = roadmap.weeks.reduce(
     (sum, w) => sum + w.items.filter((i) => i.isCompleted).length,
     0
   );
   const totalItems = roadmap.weeks.reduce((sum, w) => sum + w.items.length, 0);
 
-  // 강좌 완료 상태 토글 핸들러
   const handleToggleComplete = (itemId: string, willBeCompleted: boolean) => {
     let nextSelectedWeekIndex: number | null = null;
 
@@ -221,7 +203,7 @@ export default function DashboardPage() {
 
       <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12">
         <div className="max-w-[1100px] mx-auto">
-          {/* 헤더 */}
+          {/* Header row */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <h1 className="font-bold" style={{ color: '#2C2C2C', fontSize: '24px' }}>
@@ -255,7 +237,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* 큐리 인사 카드 */}
+          {/* Quri Greeting Card */}
           <div className="rounded-[14px] p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: '#E8F0EA' }}>
             <img src={kuriWink} alt="" style={{ width: 36, height: 36 }} />
             <p className="text-sm font-medium" style={{ color: '#2C2C2C' }}>
@@ -267,11 +249,11 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* 2열 레이아웃 */}
+          {/* Two-column layout */}
           <div className="flex flex-col lg:flex-row gap-6 page-enter">
-            {/* 왼쪽 컬럼 */}
+            {/* LEFT COLUMN */}
             <div className="w-full lg:w-[65%]">
-              {/* 진행률 카드 */}
+              {/* Progress Card */}
               <div className="bg-white rounded-2xl p-5 mb-6" style={{ border: '1px solid #E5E0D8' }}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm" style={{ color: '#2C2C2C' }}>이번 주 진행률</span>
@@ -296,11 +278,12 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* 이번 주 강좌 목록 */}
+              {/* Section title */}
               <h2 className="font-bold mb-4" style={{ color: '#2C2C2C', fontSize: '18px' }}>
                 📋 이번 주 강좌
               </h2>
 
+              {/* Course cards */}
               <div className="space-y-3">
                 {currentWeek.items.map((item) => (
                   <CourseCard key={item.id} item={item} onToggleComplete={handleToggleComplete} />
@@ -308,16 +291,15 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* 오른쪽 컬럼 */}
+            {/* RIGHT COLUMN */}
             <div className="w-full lg:w-[35%]">
               <h2 className="font-bold mb-4" style={{ color: '#2C2C2C', fontSize: '16px' }}>
                 📍 전체 로드맵
               </h2>
 
-              {/* 세로 타임라인 */}
+              {/* Vertical Timeline */}
               <div className="bg-white rounded-2xl p-5 mb-6" style={{ border: '1px solid #E5E0D8' }}>
                 <div className="relative space-y-5">
-                  {/* 타임라인 연결선 */}
                   <div
                     className="absolute left-[15px] top-[15px] bottom-[15px] w-0.5"
                     style={{ backgroundColor: '#E5E0D8' }}
@@ -338,7 +320,6 @@ export default function DashboardPage() {
                           setCurrentWeekIndex(idx);
                         }}
                       >
-                        {/* 주차 번호 원형 배지 */}
                         <div
                           className="flex-shrink-0 z-10 flex items-center justify-center font-bold"
                           style={{
@@ -354,7 +335,6 @@ export default function DashboardPage() {
                           {week.weekNumber}
                         </div>
                         <div className="flex-1 pt-1">
-                          {/* 주차 제목 */}
                           <p
                             className="text-sm mb-1"
                             style={{
@@ -364,12 +344,6 @@ export default function DashboardPage() {
                           >
                             {week.title}
                           </p>
-                          {/* 현재 주차일 때만 description 표시 */}
-                          {isCurrent && week.description && (
-                            <p className="text-xs mb-1 leading-relaxed" style={{ color: '#777777' }}>
-                              {week.description}
-                            </p>
-                          )}
                           {isCompleted && (
                             <span className="text-xs font-medium" style={{ color: '#4CAF50' }}>
                               완료
@@ -387,7 +361,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* 전체 진행률 통계 카드 */}
+              {/* Stats Card */}
               <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#FFF3EB', border: '1px solid #FFE0CC' }}>
                 <div className="flex items-center gap-2">
                   <span style={{ fontSize: '20px' }}>📚</span>
@@ -403,7 +377,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* 큐리의 다음 추천 강좌 */}
+              {/* 다음 추천 강좌 */}
               {recommendations.length > 0 && (
                 <div className="mt-4">
                   <h2 className="font-bold mb-3" style={{ color: '#2C2C2C', fontSize: '16px' }}>
@@ -425,6 +399,7 @@ export default function DashboardPage() {
                         <p className="text-xs mb-3" style={{ color: '#3B6B4A' }}>
                           {rec.message}
                         </p>
+
                         {rec.url ? (
                           <a
                             href={rec.url}
@@ -516,7 +491,6 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
         border: `1px solid ${isCompleted ? '#C8E0D0' : '#E5E0D8'}`
       }}
     >
-      {/* 완료 체크박스 */}
       <button
         type="button"
         onClick={handleCheckboxClick}
@@ -537,7 +511,6 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
         )}
       </button>
 
-      {/* 강좌 정보 */}
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <p
@@ -557,9 +530,11 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
             {course.category}
           </span>
         </div>
+        {course.institution && (
+          <p className="text-xs" style={{ color: '#999999' }}>{course.institution}</p>
+        )}
       </div>
 
-      {/* 액션 버튼 */}
       <div className="flex items-center gap-2">
         <button
           disabled={loading}
