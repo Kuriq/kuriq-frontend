@@ -54,7 +54,10 @@ export default function DashboardPage() {
           setCurrentWeekIndex(idx >= 0 ? idx : 0);
 
           try {
-            const recs = await getRecommendations(roadmapId);
+            // 초기 로딩 시 현재 주차의 첫 번째 강좌를 추천 기준으로 전달
+            const currentWeekData = data.weeks.find((w) => w.weekNumber === data.currentWeek);
+            const baseCourseId = currentWeekData?.items?.[0]?.course?.id;
+            const recs = await getRecommendations(roadmapId, baseCourseId);
             if (!cancelled) setRecommendations(recs ?? []);
           } catch {
             // 추천 실패해도 대시보드는 정상 표시
@@ -73,6 +76,16 @@ export default function DashboardPage() {
     loadDashboard();
     return () => { cancelled = true; };
   }, [location.state]);
+
+  // 주차 변경 시 현재 주차 기준으로 추천 강좌 다시 조회
+  useEffect(() => {
+    if (!roadmap) return;
+    const currentWeekData = roadmap.weeks[currentWeekIndex];
+    const baseCourseId = currentWeekData?.items?.[0]?.course?.id;
+    getRecommendations(roadmap.id, baseCourseId)
+      .then((recs) => setRecommendations(recs ?? []))
+      .catch(() => {});
+  }, [currentWeekIndex, roadmap?.id]);
 
   if (loading) {
     return (
