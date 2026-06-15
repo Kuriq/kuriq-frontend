@@ -142,7 +142,7 @@ export default function MyRoadmapsPage() {
             </div>
           )}
 
-          {/* Active Roadmap */}
+          {/* 진행 중인 로드맵 */}
           {activeRoadmap && (
             <div className="mb-10">
               <div className="flex items-center justify-between mb-4">
@@ -161,22 +161,23 @@ export default function MyRoadmapsPage() {
                 <div className="flex items-start gap-3 mb-4">
                   <img src={kuriLogo} alt="" className="flex-shrink-0" style={{ width: 32, height: 32 }} />
 
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold" style={{ color: '#2C2C2C', fontSize: '20px' }}>
+                      <h3 className="font-bold truncate" style={{ color: '#2C2C2C', fontSize: '20px' }}>
                         {activeRoadmap.title || activeRoadmap.goal}
                       </h3>
-                      <span className="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap" style={{ backgroundColor: '#E8F0EA', color: '#3B6B4A' }}>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0" style={{ backgroundColor: '#E8F0EA', color: '#3B6B4A' }}>
                         📌 진행 중
                       </span>
                     </div>
-                    <p className="text-sm truncate" style={{ color: '#555555' }}>
+                    {/* goal 텍스트 — 2줄까지만 표시 후 ... 처리 */}
+                    <p className="text-sm line-clamp-2" style={{ color: '#555555' }}>
                       {activeRoadmap.goal}
                     </p>
                   </div>
 
                   <button
-                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                    className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors"
                     style={{ color: '#777777' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8F6F1'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -209,6 +210,7 @@ export default function MyRoadmapsPage() {
                   </div>
                 </div>
 
+                {/* 주차 진행 도트 */}
                 <div className="flex items-center gap-2 mb-4">
                   {Array.from({ length: activeRoadmap.totalWeeks }, (_, i) => i + 1).map((week) => (
                     <div
@@ -249,7 +251,7 @@ export default function MyRoadmapsPage() {
             </div>
           )}
 
-          {/* Filter */}
+          {/* 필터 버튼 */}
           <div className="flex items-center mb-4">
             <div className="flex items-center gap-2">
               {(["all", "completed", "abandoned"] as FilterType[]).map((filter) => (
@@ -269,7 +271,7 @@ export default function MyRoadmapsPage() {
             </div>
           </div>
 
-          {/* Past Roadmaps */}
+          {/* 지난 로드맵 목록 */}
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold" style={{ color: '#2C2C2C', fontSize: '18px' }}>
@@ -308,9 +310,11 @@ export default function MyRoadmapsPage() {
                     </button>
                   </div>
 
+                  {/* 제목 — 2줄까지 표시 */}
                   <h3 className="font-bold mb-2 line-clamp-2" style={{ color: '#2C2C2C', fontSize: '16px' }}>
                     {roadmap.title || roadmap.goal}
                   </h3>
+                  {/* goal — 2줄까지 표시 */}
                   <p className="text-[13px] mb-3 line-clamp-2" style={{ color: '#777777' }}>
                     {roadmap.goal}
                   </p>
@@ -361,7 +365,7 @@ export default function MyRoadmapsPage() {
             </div>
           </div>
 
-          {/* Pagination */}
+          {/* 페이지네이션 */}
           {hasMore && (
             <div className="flex items-center justify-center gap-2 mt-8 mb-12">
               <button
