@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, ChevronRight } from "lucide-react";
+import { Award, ChevronRight, X } from "lucide-react";
 import { Link } from "react-router";
 import { getMyBadges, getUserStats, type UserBadge, type UserStats } from "../api/client";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { Navigation } from "../components/layout/Navigation";
 import { getBadgeCategoryIcon, getBadgeSummary, groupBadgesByCategory, mapBadgesToViewModels, type BadgeViewModel } from "../features/badges";
 
+const SEEN_BADGES_KEY = "kuriq_seen_badges";
+
 export default function BadgesPage() {
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newBadges, setNewBadges] = useState<BadgeViewModel[]>([]);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,9 +49,81 @@ export default function BadgesPage() {
   const summary = useMemo(() => getBadgeSummary(badgeViewModels), [badgeViewModels]);
   const sections = useMemo(() => groupBadgesByCategory(badgeViewModels), [badgeViewModels]);
 
+  // Detect newly earned badges
+  useEffect(() => {
+    if (loading || badgeViewModels.length === 0) return;
+    try {
+      const seen = JSON.parse(localStorage.getItem(SEEN_BADGES_KEY) || "[]") as string[];
+      const newlyUnlocked = badgeViewModels.filter(
+        (b) => b.unlocked && !seen.includes(b.badgeType)
+      );
+      if (newlyUnlocked.length > 0) {
+        setNewBadges(newlyUnlocked);
+        setShowModal(true);
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [loading, badgeViewModels]);
+
+  const handleDismissModal = () => {
+    setShowModal(false);
+    try {
+      const seen = JSON.parse(localStorage.getItem(SEEN_BADGES_KEY) || "[]") as string[];
+      const updated = [...new Set([...seen, ...newBadges.map((b) => b.badgeType)])];
+      localStorage.setItem(SEEN_BADGES_KEY, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+    setNewBadges([]);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="마이페이지" />
+
+      {/* New Badge Acquisition Modal */}
+      {showModal && newBadges.length > 0 && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={handleDismissModal}>
+          <div
+            className="relative w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={handleDismissModal}
+              className="absolute top-4 right-4 p-1 rounded-full hover:bg-[#F8F6F1] transition-colors"
+            >
+              <X className="w-5 h-5 text-[#777777]" />
+            </button>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4 text-[64px] leading-none">
+                {newBadges[0].emoji}
+              </div>
+              <h2 className="text-[20px] font-[800] text-[#2C2C2C] mb-1">
+                뱃지 획득! 🎉
+              </h2>
+              <p className="text-[16px] font-[700] text-[#3B6B4A] mb-2">
+                {newBadges.map((b) => b.displayName).join(", ")}
+              </p>
+              <p className="text-[13px] text-[#777777] mb-6 leading-relaxed">
+                {newBadges.length === 1
+                  ? `"${newBadges[0].condition}" 조건을 달성했어요.`
+                  : `${newBadges.length}개의 뱃지를 한 번에 획득했어요!`}
+              </p>
+
+              <OwlMascot size={56} variant="winking" />
+
+              <button
+                onClick={handleDismissModal}
+                className="mt-6 w-full py-3 rounded-xl bg-[#3B6B4A] text-white font-[700] text-[15px] hover:bg-[#2d5438] transition-colors"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[1080px]">

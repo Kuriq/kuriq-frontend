@@ -11,7 +11,7 @@ const DAY_MAP: Record<string, string> = {
 };
 const REVERSE_DAY_MAP: Record<string, string> = Object.fromEntries(Object.entries(DAY_MAP).map(([k, v]) => [v, k]));
 const PROFILE_ICONS = ["🦉", "🌱", "📚", "🔥", "✨", "🧠", "🌿", "🚀"];
-const PROFILE_COLORS = ["#3B6B4A", "#4F7D5C", "#6B8E23", "#E8985E", "#C75B7A", "#5B6CFA", "#9C27B0", "#2F855A"];
+const PROFILE_COLORS = ["#7EB5A6", "#F2B5D4", "#A8D8EA", "#FFDAC1", "#B5EAD7", "#C3B1E1", "#F6EAC2", "#FFB7B2"];
 
 function formatTimeToDisplay(time: string): string {
   const [h, m] = time.split(":");

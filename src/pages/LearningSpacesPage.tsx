@@ -235,7 +235,23 @@ export default function LearningSpacesPage() {
       <main className="flex-1 px-3 py-8 sm:px-5 lg:px-6 lg:py-10">
         <div className="max-w-[1280px] mx-auto w-full">
           <div className="learning-spaces-layout grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-stretch">
-            <section className="bg-white rounded-[28px] border border-[#E5E0D8] shadow-sm overflow-hidden min-h-[420px] lg:h-full">
+            {/* Map section - shows first on mobile, second on desktop */}
+            <section className="order-1 lg:order-2 relative rounded-[28px] overflow-hidden border border-[#E5E0D8] shadow-sm bg-white min-h-[420px] h-[420px] sm:h-[520px] lg:h-full">
+              <LearningSpaceMap
+                pins={mapPins}
+                userLocation={coordinates}
+                locationLabel={coordinates?.label ?? "현재 위치"}
+                radius={SEARCH_RADIUS}
+                focusTarget={focusTarget}
+                onSelectPin={(spaceId) => {
+                  const target = filteredSpaces.find((space) => space.id === spaceId);
+                  if (target) handleSelectSpace(target);
+                }}
+              />
+            </section>
+
+            {/* List section - shows second on mobile, first on desktop */}
+            <section className="order-2 lg:order-1 bg-white rounded-[28px] border border-[#E5E0D8] shadow-sm overflow-hidden min-h-[420px] lg:h-full">
               <div className="flex h-full min-h-0 flex-col p-5 sm:p-6 lg:p-7">
                 <div className="mb-6">
                   <div className="mb-4">
@@ -322,20 +338,6 @@ export default function LearningSpacesPage() {
                 )}
                 </div>
               </div>
-            </section>
-
-            <section className="relative rounded-[28px] overflow-hidden border border-[#E5E0D8] shadow-sm bg-white min-h-[420px] h-[420px] sm:h-[520px] lg:h-full">
-              <LearningSpaceMap
-                pins={mapPins}
-                userLocation={coordinates}
-                locationLabel={coordinates?.label ?? "현재 위치"}
-                radius={SEARCH_RADIUS}
-                focusTarget={focusTarget}
-                onSelectPin={(spaceId) => {
-                  const target = filteredSpaces.find((space) => space.id === spaceId);
-                  if (target) handleSelectSpace(target);
-                }}
-              />
             </section>
           </div>
         </div>
@@ -473,10 +475,10 @@ function LearningSpaceMap({
         <span>지도를 드래그해서 둘러보세요</span>
       </div>
 
-      <MapContainer center={initialCenter} zoom={14} className="w-full h-full z-0" scrollWheelZoom={false}>
+      <MapContainer center={initialCenter} zoom={14} className="w-full h-full z-0" scrollWheelZoom={true} zoomControl={true}>
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
         <MapViewportController center={initialCenter} pins={pins} focusTarget={focusTarget} />
 
@@ -513,6 +515,7 @@ function LearningSpaceMap({
           50% { transform: translateY(-8px); }
         }
         .leaflet-container { width: 100%; height: 100%; }
+        .leaflet-tile-pane { filter: saturate(0.85) sepia(0.08) brightness(1.02); }
         .current-location-marker, .study-space-marker { background: transparent; border: none; }
         .quri-current-marker {
           position: relative;
