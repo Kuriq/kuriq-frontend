@@ -20,10 +20,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
 
   if (res.status === 401 || res.status === 403) {
-    // 토큰 만료 또는 인증 실패 → refresh 시도
     const refreshed = await refreshToken();
     if (!refreshed) throw new Error("UNAUTHORIZED");
-    // 재시도
     const retry = await fetch(`${BASE_URL}${path}`, {
       ...options,
       headers: getHeaders(options.headers as Record<string, string>),
@@ -131,6 +129,19 @@ export async function searchCourses(params: {
   if (params.page !== undefined) qs.set("page", String(params.page));
   if (params.size !== undefined) qs.set("size", String(params.size));
   return request<CourseSearchResult>(`/api/v1/courses/search?${qs}`);
+}
+
+// ── Analytics ─────────────────────────────────────────
+
+export async function getPopularCourses(limit = 20) {
+  return request<CourseSearchItem[]>(`/api/v1/analytics/courses/popular?limit=${limit}`);
+}
+
+export async function logCourseClick(courseId: string, platform: string) {
+  return request<void>("/api/v1/analytics/course-click", {
+    method: "POST",
+    body: JSON.stringify({ courseId, platform, source: "SEARCH" }),
+  });
 }
 
 // ── Course Reviews ─────────────────────────────────────
@@ -368,7 +379,7 @@ export interface UserProfile {
   profileIcon?: string;
   profileColor?: string;
   createdAt?: string;
-  authProvider?: string; // LOCAL | GOOGLE | NAVER | KAKAO (회원 탈퇴 시 소셜 계정 여부 판단용)
+  authProvider?: string;
 }
 
 export async function getProfile() {
@@ -379,13 +390,6 @@ export async function updateProfile(data: { name: string; profileIcon: string; p
   return request<UserProfile>("/api/v1/users/me", {
     method: "PUT",
     body: JSON.stringify(data),
-  });
-}
-
-export async function updateUserEmail(email: string) {
-  return request<void>("/api/v1/users/me/email", {
-    method: "PATCH",
-    body: JSON.stringify({ email }),
   });
 }
 
@@ -605,7 +609,7 @@ export async function deleteRoadmap(roadmapId: string) {
 
 export interface QuizQuestion {
   questionId: string;
-  type: string; // "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER"
+  type: string;
   question: string;
   options?: Array<{ id: string; text: string }>;
 }
@@ -637,7 +641,7 @@ export interface QuizResult {
   questionId: string;
   type: string;
   isCorrect: boolean;
-  result: string; // "CORRECT" | "PARTIAL" | "WRONG" | "GRADING_FAILED"
+  result: string;
   userAnswer: string | boolean;
   correctAnswer: string | boolean;
   explanation: string;
@@ -658,17 +662,6 @@ export interface QuizSubmitResponse {
 
 export async function submitQuiz(quizSessionId: string, answers: QuizAnswer[]) {
   return request<QuizSubmitResponse>(`/api/v1/quiz/${quizSessionId}/submit`, {
-    method: "POST",
-    body: JSON.stringify({ answers }),
-  });
-}
-
-export async function retryQuiz(quizSessionId: string) {
-  return request<QuizGenerateResponse>(`/api/v1/quiz/${quizSessionId}/retry`);
-}
-
-export async function submitQuizRetry(quizSessionId: string, answers: QuizAnswer[]) {
-  return request<QuizSubmitResponse>(`/api/v1/quiz/${quizSessionId}/submit-retry`, {
     method: "POST",
     body: JSON.stringify({ answers }),
   });
@@ -704,7 +697,7 @@ export async function getQuizHistory(courseId?: string, page = 0, size = 10) {
 
 export interface ChatMessage {
   chatId: string;
-  role: string; // "user" | "assistant"
+  role: string;
   message: string;
   noteReferences?: string[];
   timestamp: string;
@@ -856,11 +849,7 @@ export interface NextCourse {
   message: string;
 }
 
-// baseCourseId: 현재 보고 있는 주차의 첫 번째 강좌 ID (주차 변경 시 추천 기준 강좌도 변경됨)
-export async function getRecommendations(roadmapId?: string, baseCourseId?: string) {
-  const qs = new URLSearchParams();
-  if (roadmapId) qs.set("roadmapId", roadmapId);
-  if (baseCourseId) qs.set("baseCourseId", baseCourseId);
-  const query = qs.toString() ? `?${qs.toString()}` : "";
+export async function getRecommendations(roadmapId?: string) {
+  const query = roadmapId ? `?roadmapId=${encodeURIComponent(roadmapId)}` : "";
   return request<NextCourse[]>(`/api/v1/users/me/recommendations${query}`);
 }
