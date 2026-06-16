@@ -26,31 +26,16 @@ export default function Home() {
   }, []);
 
   const suggestionChips = [
-    "🎯 AI·데이터 입문",
-    "📚 한국어교원 준비",
-    "💼 디지털 마케팅",
-    "🎨 취미·교양 탐색"
+    { label: "🎯 AI/데이터 입문", prompt: "비전공자인데 AI와 데이터 분석에 관심이 있습니다. 파이썬 기초부터 데이터 분석까지 단계별로 배우고 싶어요. 주 5시간 정도 투자할 수 있습니다." },
+    { label: "📈 주식투자 입문", prompt: "주식 투자를 처음 시작하려고 합니다. 기초 경제 개념부터 투자 분석 방법까지 체계적으로 배우고 싶어요. 초보자도 이해하기 쉬운 과정으로 추천해 주세요." },
+    { label: "🌍 외국어 기초", prompt: "외국어(영어/일본어/중국어)를 기초부터 배우고 싶습니다. 회화 중심으로 일상 대화를 할 수 있을 때까지 공부하고 싶어요. 주 3-4시간 정도 가능합니다." },
+    { label: "💻 코딩 첫걸음", prompt: "코딩을 완전히 처음 시작합니다. 어떤 언어부터 배워야 할지 모르겠어요. 쉽고 재미있게 시작할 수 있는 프로그래밍 입문 과정을 추천해 주세요." },
+    { label: "📊 엑셀/오피스", prompt: "직장에서 쓸 수 있는 엑셀 실력을 키우고 싶습니다. 기초 함수부터 피벗 테이블, 차트 만들기까지 업무에 바로 적용할 수 있는 과정이 필요해요." },
+    { label: "🎨 취미·교양", prompt: "평소 관심 있던 취미와 교양 분야를 배우고 싶습니다. 사진, 음악, 미술 등 일상에서 즐길 수 있는 강좌를 추천해 주세요." }
   ];
 
-  const handleGenerateRoadmap = async () => {
-    const trimmedPrompt = inputText.trim();
-    if (!trimmedPrompt) return;
-
-    if (!isAuthenticated) {
-      setError("로드맵 생성은 로그인 후 이용 가능합니다.");
-      navigate("/auth");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    sessionStorage.setItem(PENDING_ROADMAP_PROMPT_KEY, trimmedPrompt);
-    navigate("/loading-roadmap", { state: { prompt: trimmedPrompt } });
-  };
-
-  const handleChipClick = (chip: string) => {
-    const textOnly = chip.replace(/[^\w\s가-힣·]/g, '').trim();
-    setInputText(`${textOnly}에 관심이 있습니다. 어디서부터 시작하면 좋을까요?`);
+  const handleChipClick = (chip: typeof suggestionChips[0]) => {
+    setInputText(chip.prompt);
   };
 
   return (
@@ -75,7 +60,7 @@ export default function Home() {
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="비전공자인데 파이썬부터 시작해서 데이터 분석까지 배우고 싶어요. 주 5시간 정도 쓸 수 있습니다."
+              placeholder="예) 비전공자인데 파이썬부터 시작해서 데이터 분석까지 배우고 싶어요. 주 5시간 정도 쓸 수 있습니다."
               className="w-full h-[120px] resize-none bg-transparent border-none outline-none text-[#2C2C2C] placeholder:text-[#AAAAAA] font-[400] text-[15px] leading-relaxed"
             />
 
@@ -102,11 +87,11 @@ export default function Home() {
           <div className="flex flex-wrap justify-center gap-2 mb-3">
             {suggestionChips.map((chip) => (
               <button
-                key={chip}
+                key={chip.label}
                 onClick={() => handleChipClick(chip)}
                 className="px-4 py-2 bg-white border border-[#E5E0D8] rounded-full text-[13px] text-[#2C2C2C] hover:border-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors"
               >
-                {chip}
+                {chip.label}
               </button>
             ))}
           </div>

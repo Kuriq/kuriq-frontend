@@ -7,7 +7,7 @@ import { getPlatformFilterValue, getPlatformLabel } from "../utils/platform";
 // 프론트 정렬 라벨 → 백엔드 정렬 파라매터 매핑
 const sortMap: Record<string, string> = {
   "최신순": "latest",
-  "인기순": "latest", // 백엔드에 인기순 없으면 최신순으로 폴백
+  "인기순": "popular",
   "강좌명순": "title",
 };
 
