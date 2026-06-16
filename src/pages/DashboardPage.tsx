@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, getNoteByCourse, completeItem, uncompleteItem, getRecommendations, type NextCourse } from "../api/client";
+import { getRoadmap, getMyRoadmaps, type Roadmap, type RoadmapWeek, type RoadmapItem, completeItem, uncompleteItem, getRecommendations, type NextCourse } from "../api/client";
 import kuriWink from "../assets/images/kuri-wink.png";
 import kuriSuccess from "../assets/images/kuri-success.png";
 import { getPlatformLabel } from "../utils/platform";
@@ -25,10 +25,12 @@ export default function DashboardPage() {
       setError(null);
 
       try {
+        // 1. state로 전달받은 roadmapId 우선 사용
         const stateRoadmapId = (location.state as { roadmapId?: string } | null)?.roadmapId;
 
         let roadmapId: string | undefined = stateRoadmapId;
 
+        // 2. 없으면 활성 로드맵 조회
         if (!roadmapId) {
           const myRoadmaps = await getMyRoadmaps(0, 10);
           const active = myRoadmaps.content.find((r) => r.isActive);
@@ -105,6 +107,7 @@ export default function DashboardPage() {
   const nextWeek = currentWeekIndex < roadmap.weeks.length - 1 ? roadmap.weeks[currentWeekIndex + 1] : null;
   const selectedWeekNumber = currentWeek?.weekNumber ?? roadmap.currentWeek;
 
+  // currentWeek 가 없으면 에러 처리
   if (!currentWeek) {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
@@ -127,12 +130,14 @@ export default function DashboardPage() {
   weekEndDay.setDate(weekEndDay.getDate() + 6);
   const formatDateShort = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
 
+  // 주차별 완료된 강좌 수 계산
   const totalCompletedItems = roadmap.weeks.reduce(
     (sum, w) => sum + w.items.filter((i) => i.isCompleted).length,
     0
   );
   const totalItems = roadmap.weeks.reduce((sum, w) => sum + w.items.length, 0);
 
+  // 강좌 완료 상태 토글 핸들러
   const handleToggleComplete = (itemId: string, willBeCompleted: boolean) => {
     let nextSelectedWeekIndex: number | null = null;
 
@@ -444,17 +449,8 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
   const { course, isCompleted } = item;
   const [loading, setLoading] = useState(false);
 
-  const handleNoteClick = async () => {
-    setLoading(true);
-    try {
-      const note = await getNoteByCourse(course.id);
-      navigate(`/note-editor?courseId=${course.id}`);
-    } catch (err) {
-      console.log("노트 조회 실패:", err);
-      navigate(`/note-editor?courseId=${course.id}`);
-    } finally {
-      setLoading(false);
-    }
+  const handleNoteClick = () => {
+    navigate(`/note-editor?courseId=${course.id}&courseTitle=${encodeURIComponent(course.title)}`);
   };
 
   const handleCheckboxClick = async () => {
