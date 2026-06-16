@@ -4,19 +4,12 @@ import { Navigation } from "../components/layout/Navigation";
 import { searchCourses, type CourseSearchResult } from "../api/client";
 import { getPlatformFilterValue, getPlatformLabel } from "../utils/platform";
 
-// 프론트 정렬 라벨 → 백엔드 정렬 파라매터 매핑
-const sortMap: Record<string, string> = {
-  "최신순": "latest",
-  "인기순": "popular",
-  "강좌명순": "title",
-};
+// 정렬 기능 제거 (ChromaDB 검색 시 정렬 파라미터 미전달로 인해 비활성화)
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [platform, setPlatform] = useState("");
   const [category, setCategory] = useState("");
-  const [sortBy, setSortBy] = useState("최신순");
-  
   const [results, setResults] = useState<CourseSearchResult["content"]>([]);
   const [loading, setLoading] = useState(false);
   const [totalElements, setTotalElements] = useState(0);
@@ -35,7 +28,6 @@ export default function SearchPage() {
         keyword: searchQuery || undefined,
         platform: platform ? getPlatformFilterValue(platform) : undefined,
         category: category || undefined,
-        sort: sortMap[sortBy] || "latest",
         page: pageNum,
         size,
       });
@@ -56,7 +48,7 @@ export default function SearchPage() {
         setLoading(false);
       }
     }
-  }, [searchQuery, platform, category, sortBy]);
+  }, [searchQuery, platform, category]);
 
   const handleSearch = () => {
     setPage(0);
@@ -66,7 +58,6 @@ export default function SearchPage() {
   const handleResetFilters = () => {
     setPlatform("");
     setCategory("");
-    setSortBy("최신순");
   };
 
   // 필터 변경 시 즉시 검색 실행
@@ -79,7 +70,7 @@ export default function SearchPage() {
     setPage(0);
     void fetchCourses(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, category, sortBy]);
+  }, [platform, category]);
 
   // 초기 로딩 시 전체 강좌 조회
   useEffect(() => {
@@ -153,7 +144,6 @@ export default function SearchPage() {
                   ? `전체 ${totalElements}개의 강좌가 있어요`
                   : `총 ${totalElements}개의 강좌를 찾았어요`}
             </h2>
-            <SortMenu value={sortBy} onChange={setSortBy} />
           </div>
 
           {loading ? (
@@ -316,53 +306,6 @@ function ActiveFilterChip({
       {label}
       <X className="w-3.5 h-3.5" />
     </button>
-  );
-}
-
-function SortMenu({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const sortOptions = ["최신순", "인기순", "강좌명순"];
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="px-3 py-1.5 text-[14px] text-[#2C2C2C] font-[400] hover:text-[#3B6B4A] transition-colors flex items-center gap-1"
-      >
-        {value}
-        <ChevronDown className="w-4 h-4" />
-      </button>
-
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full mt-1 right-0 bg-white border border-[#E5E0D8] rounded-xl shadow-lg py-2 min-w-[120px] z-20">
-            {sortOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => {
-                  onChange(option);
-                  setIsOpen(false);
-                }}
-                className={`w-full px-4 py-2 text-left text-[13px] hover:bg-[#F8F6F1] transition-colors ${
-                  value === option ? "text-[#3B6B4A] font-[600]" : "text-[#2C2C2C]"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
   );
 }
 
