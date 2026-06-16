@@ -21,10 +21,10 @@ interface UseNoteReturn {
   addContentToNote: (content: string) => void;
 }
 
-export function useNote(courseId: string): UseNoteReturn {
+export function useNote(courseId: string, initialCourseTitle = ""): UseNoteReturn {
   const [noteId, setNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
-  const [courseTitle, setCourseTitle] = useState("");
+  const [courseTitle, setCourseTitle] = useState(initialCourseTitle);
   const [courseCategory, setCourseCategory] = useState("");
   const [platform, setPlatform] = useState("");
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function useNote(courseId: string): UseNoteReturn {
   const [aiOrganizeResult, setAiOrganizeResult] = useState<AiOrganizeResponse | null>(null);
   const [showOrganizeResult, setShowOrganizeResult] = useState(false);
 
-  // Load or create note on mount
+  // Load note on mount (기존 노트 있으면 불러오기, 없으면 새 노트 모드)
   useEffect(() => {
     if (!courseId) return;
 
@@ -44,36 +44,37 @@ export function useNote(courseId: string): UseNoteReturn {
         setNoteId(note.noteId);
         setNoteContent(note.content);
         setCourseTitle(note.courseTitle);
-        setCourseCategory(note.courseCategory || "기타");
+        setCourseCategory("기타");
         setPlatform(note.platform);
         setLastSavedAt(note.lastSavedAt);
       })
-      .catch(async (err) => {
-        console.log("노트 조회 실패, 생성 시도:", err);
-        // 404 = 노트 없음 → 생성 후 재조회해서 courseTitle 채우기
-        try {
-          await createNote({ courseId, content: "" });
-          const note = await getNoteByCourse(courseId);
-          setNoteId(note.noteId);
-          setNoteContent(note.content ?? "");
-          setCourseTitle(note.courseTitle);
-          setCourseCategory("기타");
-          setPlatform(note.platform);
-          setLastSavedAt(note.lastSavedAt);
-          window.history.replaceState({}, "", `/note-editor?noteId=${note.noteId}`);
-        } catch (createErr) {
-          console.error("노트 생성 실패:", createErr);
-        }
+      .catch((err) => {
+        // 404 = 노트 없음 → 새 노트 모드로 진입 (내용 입력 후 저장 시 생성)
+        console.log("노트 없음, 새 노트 모드:", err);
       })
       .finally(() => setLoading(false));
   }, [courseId]);
 
   // Manual save function
   const handleManualSave = useCallback(async () => {
-    if (!noteId || !noteContent) return;
+    if (!noteContent) return;
     setSaving(true);
     try {
-      const res = await saveNote(noteId, { content: noteContent });
+      let currentNoteId = noteId;
+      if (!currentNoteId) {
+        // 첫 저장 시 노트 생성
+        const created = await createNote({ courseId, content: noteContent });
+        currentNoteId = created.noteId;
+        setNoteId(created.noteId);
+        const note = await getNoteByCourse(courseId);
+        setCourseTitle(note.courseTitle);
+        setCourseCategory("기타");
+        setPlatform(note.platform);
+        setLastSavedAt(note.lastSavedAt);
+        window.history.replaceState({}, "", `/note-editor?courseId=${courseId}&courseTitle=${encodeURIComponent(note.courseTitle)}`);
+        return true;
+      }
+      const res = await saveNote(currentNoteId, { content: noteContent });
       setLastSavedAt(res.lastSavedAt);
       return true;
     } catch (err) {
@@ -82,17 +83,29 @@ export function useNote(courseId: string): UseNoteReturn {
     } finally {
       setSaving(false);
     }
-  }, [noteId, noteContent]);
+  }, [noteId, noteContent, courseId]);
 
   // Auto-save note (debounce 3s)
   useEffect(() => {
-    if (!noteId || !noteContent) return;
+    if (!noteContent) return;
 
     const timer = setTimeout(async () => {
       setSaving(true);
       try {
-        const res = await saveNote(noteId, { content: noteContent });
-        setLastSavedAt(res.lastSavedAt);
+        if (!noteId) {
+          // 첫 자동저장 시 노트 생성
+          const created = await createNote({ courseId, content: noteContent });
+          setNoteId(created.noteId);
+          const note = await getNoteByCourse(courseId);
+          setCourseTitle(note.courseTitle);
+          setCourseCategory("기타");
+          setPlatform(note.platform);
+          setLastSavedAt(note.lastSavedAt);
+          window.history.replaceState({}, "", `/note-editor?courseId=${courseId}&courseTitle=${encodeURIComponent(note.courseTitle)}`);
+        } else {
+          const res = await saveNote(noteId, { content: noteContent });
+          setLastSavedAt(res.lastSavedAt);
+        }
       } catch (err) {
         console.error("노트 저장 실패:", err);
       } finally {
@@ -101,7 +114,7 @@ export function useNote(courseId: string): UseNoteReturn {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [noteContent, noteId]);
+  }, [noteContent, noteId, courseId]);
 
   // Add content to note
   const addContentToNote = useCallback((content: string) => {
