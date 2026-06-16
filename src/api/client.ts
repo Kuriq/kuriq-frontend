@@ -140,7 +140,7 @@ export async function getPopularCourses(limit = 20) {
 export async function logCourseClick(courseId: string, platform: string) {
   return request<void>("/api/v1/analytics/course-click", {
     method: "POST",
-    body: JSON.stringify({ courseId, platform, source: "SEARCH" }),
+    body: JSON.stringify({ courseId, platform, source: "search" }),
   });
 }
 
@@ -421,7 +421,6 @@ export async function unlinkSocialAccount(provider: string) {
 
 export interface NotificationSettings {
   emailEnabled: boolean;
-  notificationEmail?: string;
   kakaoEnabled: boolean;
   learningDay: string;
   learningTime: string;
@@ -856,7 +855,6 @@ export async function getRecommendations(roadmapId?: string) {
 }
 
 // ── Quiz (aliases for retry flow) ─────────────────────
-// QuizPage.tsx가 retryQuiz, submitQuizRetry를 import할 때 빌드 에러 방지용
 
 export async function retryQuiz(noteId: string, excludeSessionIds?: string[]) {
   return generateQuiz(noteId, excludeSessionIds);
@@ -868,9 +866,9 @@ export async function submitQuizRetry(quizSessionId: string, answers: QuizAnswer
 
 // ── User Email Update ─────────────────────────────────
 
-export async function updateUserEmail(email: string) {
-  return request<void>("/api/v1/users/me/email", {
-    method: "PATCH",
-    body: JSON.stringify({ email }),
+export async function updateUserEmail(email: string, currentPassword: string) {
+  return request<UserProfile>("/api/v1/users/me/email", {
+    method: "PUT",
+    body: JSON.stringify({ email, currentPassword }),
   });
 }
