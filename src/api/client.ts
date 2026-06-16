@@ -853,3 +853,24 @@ export async function getRecommendations(roadmapId?: string) {
   const query = roadmapId ? `?roadmapId=${encodeURIComponent(roadmapId)}` : "";
   return request<NextCourse[]>(`/api/v1/users/me/recommendations${query}`);
 }
+
+// ── Quiz (aliases for retry flow) ─────────────────────
+// QuizPage.tsx가 retryQuiz, submitQuizRetry를 import할 때 빌드 에러 방지용
+
+export async function retryQuiz(noteId: string, excludeSessionIds?: string[]) {
+  return generateQuiz(noteId, excludeSessionIds);
+}
+
+export async function submitQuizRetry(quizSessionId: string, answers: QuizAnswer[]) {
+  return submitQuiz(quizSessionId, answers);
+}
+
+// ── User Email Update ─────────────────────────────────
+// SettingsPage.tsx가 updateUserEmail을 import할 때 빌드 에러 방지용
+
+export async function updateUserEmail(email: string, currentPassword: string) {
+  return request<UserProfile>("/api/v1/users/me/email", {
+    method: "PUT",
+    body: JSON.stringify({ email, currentPassword }),
+  });
+}
