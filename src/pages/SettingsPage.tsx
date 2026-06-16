@@ -38,7 +38,7 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileName, setProfileName] = useState("");
   const [profileIcon, setProfileIcon] = useState("🦉");
-  const [profileColor, setProfileColor] = useState("#3B6B4A");
+  const [profileColor, setProfileColor] = useState("#7EB5A6");
 
   const [kakaoEnabled, setKakaoEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
