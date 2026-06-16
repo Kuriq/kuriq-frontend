@@ -421,6 +421,7 @@ export async function unlinkSocialAccount(provider: string) {
 
 export interface NotificationSettings {
   emailEnabled: boolean;
+  notificationEmail?: string;
   kakaoEnabled: boolean;
   learningDay: string;
   learningTime: string;

@@ -81,6 +81,7 @@ export default function SettingsPage() {
 
         setKakaoEnabled(settings.kakaoEnabled);
         setEmailEnabled(settings.emailEnabled);
+        setPendingEmail(settings.notificationEmail || profileData.email || "");
         setSelectedDay(DAY_MAP[settings.learningDay] || "월요일");
         setSelectedTime(formatTimeToDisplay(settings.learningTime));
         setWeeklyStartEnabled(settings.weeklyStartAlert);
@@ -436,9 +437,7 @@ function NotificationSection(props: {
                       setEmailError("");
                       updateUserEmail(email)
                         .then(async () => {
-                          const updatedProfile = await getProfile();
-                          setProfile(updatedProfile);
-                          setPendingEmail("");
+                          setPendingEmail(email);
                         })
                         .catch((e: unknown) => {
                           setEmailError(e instanceof Error ? e.message : "이메일 저장에 실패했습니다.");
@@ -466,9 +465,7 @@ function NotificationSection(props: {
                       setEmailSaving(true);
                       setEmailError("");
                       await updateUserEmail(email);
-                      const updatedProfile = await getProfile();
-                      setProfile(updatedProfile);
-                      setPendingEmail("");
+                      setPendingEmail(email);
                     } catch (e: unknown) {
                       setEmailError(e instanceof Error ? e.message : "이메일 저장에 실패했습니다.");
                     } finally {
