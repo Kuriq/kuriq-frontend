@@ -18,6 +18,7 @@ export default function NoteEditorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get("courseId") || "";
+  const initialCourseTitle = searchParams.get("courseTitle") || "";
 
   const [activeTab, setActiveTab] = useState<"organize" | "quiz" | "chat">("chat");
   const [editMode, setEditMode] = useState(false); // false=미리보기 (기본), true=편집
@@ -41,23 +42,23 @@ export default function NoteEditorPage() {
     handleAiOrganize,
     handleManualSave,
     addContentToNote,
-  } = useNote(courseId);
+  } = useNote(courseId, initialCourseTitle);
 
   // 에디터 포맷팅 함수들
   const insertFormatting = (before: string, after: string = "", placeholder: string = "") => {
     const textarea = document.querySelector("textarea");
     if (!textarea) return;
-    
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = noteContent.substring(start, end) || placeholder;
-    const newText = 
-      noteContent.substring(0, start) + 
-      before + selectedText + after + 
+    const newText =
+      noteContent.substring(0, start) +
+      before + selectedText + after +
       noteContent.substring(end);
-    
+
     setNoteContent(newText);
-    
+
     // 커서 위치 조정
     setTimeout(() => {
       textarea.focus();
@@ -73,15 +74,15 @@ export default function NoteEditorPage() {
   const handleHeading = (level: string) => {
     const textarea = document.querySelector("textarea");
     if (!textarea) return;
-    
+
     const start = textarea.selectionStart;
     const lineStart = noteContent.lastIndexOf("\n", start - 1) + 1;
     const hashes = level === "h1" ? "##" : level === "h2" ? "###" : "####";
-    const newText = 
-      noteContent.substring(0, lineStart) + 
-      hashes + " " + 
+    const newText =
+      noteContent.substring(0, lineStart) +
+      hashes + " " +
       noteContent.substring(lineStart);
-    
+
     setNoteContent(newText);
   };
   const handleBulletList = () => insertFormatting("\n- ", "", "리스트 항목");
@@ -92,15 +93,15 @@ export default function NoteEditorPage() {
     if (url) {
       const textarea = document.querySelector("textarea");
       if (!textarea) return;
-      
+
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const selectedText = noteContent.substring(start, end) || "링크 텍스트";
-      const newText = 
-        noteContent.substring(0, start) + 
-        `[${selectedText}](${url})` + 
+      const newText =
+        noteContent.substring(0, start) +
+        `[${selectedText}](${url})` +
         noteContent.substring(end);
-      
+
       setNoteContent(newText);
     }
   };
@@ -125,8 +126,6 @@ export default function NoteEditorPage() {
     showQuizResult,
     expandedQuestion,
     handleStartQuiz,
-    handleRetryQuiz,
-    handleRegenerateQuiz,
     handleSelectAnswer,
     handleNextQuestion,
     handleSubmitQuiz,
@@ -139,7 +138,7 @@ export default function NoteEditorPage() {
   const handleTabChange = (nextTab: "organize" | "quiz" | "chat") => {
     if (isAiTaskRunning) return;
     setActiveTab(nextTab);
-    // AI 정리 결과를 다른 탭 갔다 와도 유지 (organize 탭 재진입 시 계속 표시)
+    if (nextTab !== "organize") setShowOrganizeResult(false);
   };
 
   return (
@@ -208,7 +207,7 @@ export default function NoteEditorPage() {
                       handleManualSave();
                       setEditMode(false); // 저장 후 미리보기로 전환
                     }}
-                    disabled={!noteId || saving || !noteContent}
+                    disabled={saving || !noteContent}
                     className="px-3 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                     style={{
                       backgroundColor: saving || !noteContent ? "#E5E0D8" : "#3B6B4A",
@@ -342,7 +341,7 @@ export default function NoteEditorPage() {
                   )}
                 </div>
               )}
-              
+
               {/* 편집 버튼 (미리보기 모드일 때만 표시) */}
               {!editMode && noteContent && (
                 <div className="flex justify-end mt-4">
@@ -429,8 +428,6 @@ export default function NoteEditorPage() {
                     quizAnswers={quizAnswers}
                     quizResult={quizResult}
                     handleStartQuiz={handleStartQuiz}
-                    handleRetryQuiz={handleRetryQuiz}
-                    handleRegenerateQuiz={handleRegenerateQuiz}
                     handleSelectAnswer={handleSelectAnswer}
                     handleNextQuestion={handleNextQuestion}
                     handleSubmitQuiz={handleSubmitQuiz}
@@ -462,11 +459,7 @@ export default function NoteEditorPage() {
           onClose={() => setShowQuizResult(false)}
           onRetry={async () => {
             setShowQuizResult(false);
-            await handleRetryQuiz();
-          }}
-          onRegenerate={async () => {
-            setShowQuizResult(false);
-            await handleRegenerateQuiz();
+            await handleStartQuiz();
           }}
         />
       )}
