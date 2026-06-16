@@ -38,6 +38,22 @@ export default function Home() {
     setInputText(chip.prompt);
   };
 
+  const handleGenerateRoadmap = async () => {
+    const trimmedPrompt = inputText.trim();
+    if (!trimmedPrompt) return;
+
+    if (!isAuthenticated) {
+      setError("로드맵 생성은 로그인 후 이용 가능합니다.");
+      navigate("/auth");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    sessionStorage.setItem(PENDING_ROADMAP_PROMPT_KEY, trimmedPrompt);
+    navigate("/loading-roadmap", { state: { prompt: trimmedPrompt } });
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
       <Navigation activeMenu="홈" />
