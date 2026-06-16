@@ -50,17 +50,17 @@ export function useNote(courseId: string): UseNoteReturn {
       })
       .catch(async (err) => {
         console.log("노트 조회 실패, 생성 시도:", err);
-        // 404 = 노트 없음 → 생성
+        // 404 = 노트 없음 → 생성 후 재조회해서 courseTitle 채우기
         try {
-          const created = await createNote({ courseId, content: "학습 노트를 작성해보세요." });
-          setNoteId(created.noteId);
-          setNoteContent("");
-          setCourseTitle("");
-          setCourseCategory("");
-          setPlatform("");
-          setLastSavedAt(null);
-          // URL 업데이트
-          window.history.replaceState({}, "", `/note-editor?noteId=${created.noteId}`);
+          await createNote({ courseId, content: "" });
+          const note = await getNoteByCourse(courseId);
+          setNoteId(note.noteId);
+          setNoteContent(note.content ?? "");
+          setCourseTitle(note.courseTitle);
+          setCourseCategory("기타");
+          setPlatform(note.platform);
+          setLastSavedAt(note.lastSavedAt);
+          window.history.replaceState({}, "", `/note-editor?noteId=${note.noteId}`);
         } catch (createErr) {
           console.error("노트 생성 실패:", createErr);
         }
