@@ -42,7 +42,6 @@ export default function SettingsPage() {
 
   const [kakaoEnabled, setKakaoEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
-  const [showEmailInput, setShowEmailInput] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailError, setEmailError] = useState("");
@@ -282,8 +281,6 @@ export default function SettingsPage() {
             setKakaoEnabled={setKakaoEnabled}
             emailEnabled={emailEnabled}
             setEmailEnabled={setEmailEnabled}
-            showEmailInput={showEmailInput}
-            setShowEmailInput={setShowEmailInput}
             pendingEmail={pendingEmail}
             setPendingEmail={setPendingEmail}
             emailSaving={emailSaving}
@@ -370,7 +367,6 @@ function NotificationSection(props: {
   setProfile: (p: UserProfile) => void;
   kakaoEnabled: boolean; setKakaoEnabled: (value: boolean) => void;
   emailEnabled: boolean; setEmailEnabled: (value: boolean) => void;
-  showEmailInput: boolean; setShowEmailInput: (value: boolean) => void;
   pendingEmail: string; setPendingEmail: (value: string) => void;
   emailSaving: boolean; setEmailSaving: (value: boolean) => void;
   emailError: string; setEmailError: (value: string) => void;
@@ -382,7 +378,7 @@ function NotificationSection(props: {
   completionCongratEnabled: boolean; setCompletionCongratEnabled: (value: boolean) => void;
   days: string[]; times: string[]; saving: boolean; onSave: () => void;
 }) {
-  const { profile, setProfile, kakaoEnabled, setKakaoEnabled, emailEnabled, setEmailEnabled, showEmailInput, setShowEmailInput, pendingEmail, setPendingEmail, emailSaving, setEmailSaving, emailError, setEmailError, selectedDay, setSelectedDay, selectedTime, setSelectedTime, weeklyStartEnabled, setWeeklyStartEnabled, incompleteReminderEnabled, setIncompleteReminderEnabled, inactiveNoticeEnabled, setInactiveNoticeEnabled, completionCongratEnabled, setCompletionCongratEnabled, days, times, saving, onSave } = props;
+  const { profile, setProfile, kakaoEnabled, setKakaoEnabled, emailEnabled, setEmailEnabled, pendingEmail, setPendingEmail, emailSaving, setEmailSaving, emailError, setEmailError, selectedDay, setSelectedDay, selectedTime, setSelectedTime, weeklyStartEnabled, setWeeklyStartEnabled, incompleteReminderEnabled, setIncompleteReminderEnabled, inactiveNoticeEnabled, setInactiveNoticeEnabled, completionCongratEnabled, setCompletionCongratEnabled, days, times, saving, onSave } = props;
   return (
     <section>
       <div className="rounded-2xl border border-[#E5E0D8] bg-white p-8 shadow-sm mb-6">
@@ -402,7 +398,7 @@ function NotificationSection(props: {
               </div>
             </div>
             <div className="p-5 bg-[#F8F6F1] rounded-xl">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#E8F0EA]">
                     <Bell className="w-6 h-6 text-[#3B6B4A]" />
@@ -410,93 +406,78 @@ function NotificationSection(props: {
                   <div>
                     <span className="text-[15px] font-[600] text-[#2C2C2C]">이메일로 받기</span>
                     <span className="ml-2 px-2.5 py-0.5 bg-[#E8F0EA] text-[#3B6B4A] text-[11px] font-[600] rounded-full">추천</span>
-                    {profile?.email && <p className="text-[12px] text-[#777777] mt-0.5">{profile.email}</p>}
                   </div>
                 </div>
-                <TogglePill enabled={emailEnabled} onChange={(val) => {
-                  setEmailEnabled(val);
-                  if (val && (!profile?.email || profile.email.trim() === "")) {
-                    setShowEmailInput(true);
-                    setEmailError("");
-                  }
-                }} />
+                <TogglePill enabled={emailEnabled} onChange={setEmailEnabled} />
               </div>
-              {showEmailInput && (
-                <div className="mt-4 pt-4 border-t border-[#E5E0D8]">
-                  <p className="text-[13px] text-[#2C2C2C] font-[600] mb-2">이메일 주소를 입력해 주세요</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={pendingEmail}
-                      onChange={(e) => setPendingEmail(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !emailSaving) {
-                          e.preventDefault();
-                          // Trigger save logic
-                          const email = pendingEmail.trim();
-                          if (!email) {
-                            setEmailError("이메일을 입력해 주세요.");
-                            return;
-                          }
-                          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                          if (!emailRegex.test(email)) {
-                            setEmailError("올바른 이메일 형식이 아닙니다.");
-                            return;
-                          }
-                          setEmailSaving(true);
-                          setEmailError("");
-                          updateUserEmail(email)
-                            .then(async () => {
-                              const updatedProfile = await getProfile();
-                              setProfile(updatedProfile);
-                              setShowEmailInput(false);
-                              setPendingEmail("");
-                            })
-                            .catch((e: unknown) => {
-                              setEmailError(e instanceof Error ? e.message : "이메일 저장에 실패했습니다.");
-                            })
-                            .finally(() => setEmailSaving(false));
-                        }
-                      }}
-                      placeholder="example@email.com"
-                      className="flex-1 h-10 px-3 bg-white border border-[#E5E0D8] rounded-lg text-[14px] outline-none focus:border-[#3B6B4A]"
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!pendingEmail.trim()) {
-                          setEmailError("이메일을 입력해 주세요.");
-                          return;
-                        }
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(pendingEmail.trim())) {
-                          setEmailError("올바른 이메일 형식이 아닙니다.");
-                          return;
-                        }
-                        try {
-                          setEmailSaving(true);
-                          setEmailError("");
-                          await updateUserEmail(pendingEmail.trim());
-                          // 프로필 새로고침
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={pendingEmail || profile?.email || ""}
+                  onChange={(e) => setPendingEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !emailSaving) {
+                      e.preventDefault();
+                      const email = (pendingEmail || profile?.email || "").trim();
+                      if (!email) {
+                        setEmailError("이메일을 입력해 주세요.");
+                        return;
+                      }
+                      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                      if (!emailRegex.test(email)) {
+                        setEmailError("올바른 이메일 형식이 아닙니다.");
+                        return;
+                      }
+                      setEmailSaving(true);
+                      setEmailError("");
+                      updateUserEmail(email)
+                        .then(async () => {
                           const updatedProfile = await getProfile();
                           setProfile(updatedProfile);
-                          setShowEmailInput(false);
                           setPendingEmail("");
-                        } catch (e: unknown) {
+                        })
+                        .catch((e: unknown) => {
                           setEmailError(e instanceof Error ? e.message : "이메일 저장에 실패했습니다.");
-                        } finally {
-                          setEmailSaving(false);
-                        }
-                      }}
-                      disabled={emailSaving}
-                      className="px-4 h-10 bg-[#3B6B4A] text-white rounded-lg text-[14px] font-[600] hover:bg-[#2d5438] disabled:opacity-50"
-                    >
-                      {emailSaving ? "저장 중..." : "저장"}
-                    </button>
-                  </div>
-                  {emailError && <p className="text-[12px] text-red-600 mt-1.5">{emailError}</p>}
-                </div>
-              )}
+                        })
+                        .finally(() => setEmailSaving(false));
+                    }
+                  }}
+                  placeholder="example@email.com"
+                  className="flex-1 h-10 px-3 bg-white border border-[#E5E0D8] rounded-lg text-[14px] outline-none focus:border-[#3B6B4A]"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const email = (pendingEmail || profile?.email || "").trim();
+                    if (!email) {
+                      setEmailError("이메일을 입력해 주세요.");
+                      return;
+                    }
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                      setEmailError("올바른 이메일 형식이 아닙니다.");
+                      return;
+                    }
+                    try {
+                      setEmailSaving(true);
+                      setEmailError("");
+                      await updateUserEmail(email);
+                      const updatedProfile = await getProfile();
+                      setProfile(updatedProfile);
+                      setPendingEmail("");
+                    } catch (e: unknown) {
+                      setEmailError(e instanceof Error ? e.message : "이메일 저장에 실패했습니다.");
+                    } finally {
+                      setEmailSaving(false);
+                    }
+                  }}
+                  disabled={emailSaving}
+                  className="px-4 h-10 bg-[#3B6B4A] text-white rounded-lg text-[14px] font-[600] hover:bg-[#2d5438] disabled:opacity-50"
+                >
+                  {emailSaving ? "저장 중..." : "저장"}
+                </button>
+              </div>
+              {emailError && <p className="text-[12px] text-red-600 mt-1.5">{emailError}</p>}
             </div>
           </div>
       </div>
