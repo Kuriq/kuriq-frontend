@@ -13,6 +13,7 @@ export default function QuizPage() {
   const noteId = searchParams.get("noteId") || "";
   const mode = (searchParams.get("mode") as QuizMode) || "new";
   const retrySessionId = searchParams.get("sessionId") || "";
+  const excludeSessionId = searchParams.get("excludeSessionId") || "";
 
   const [phase, setPhase] = useState<QuizPhase>("loading");
   const [quizSessionId, setQuizSessionId] = useState<string>("");
@@ -52,7 +53,7 @@ export default function QuizPage() {
       return;
     }
     setLoading(true);
-    generateQuiz(noteId)
+    generateQuiz(noteId, excludeSessionId ? [excludeSessionId] : undefined)
       .then((res) => {
         setQuizSessionId(res.quizSessionId);
         setQuestions(res.questions);
@@ -60,7 +61,7 @@ export default function QuizPage() {
       })
       .catch(() => setError("퀴즈 생성에 실패했습니다."))
       .finally(() => setLoading(false));
-  }, [noteId, mode, retrySessionId]);
+  }, [noteId, mode, retrySessionId, excludeSessionId]);
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
@@ -196,7 +197,7 @@ export default function QuizPage() {
                 퀴즈 다시풀기
               </button>
               <button
-                onClick={() => navigate(`/quiz?noteId=${noteId}`)}
+                onClick={() => navigate(`/quiz?noteId=${noteId}&excludeSessionId=${quizSessionId}`)}
                 className="w-full py-4 bg-white border border-[#E5E0D8] text-[#2C2C2C] rounded-2xl text-[16px] font-[800] hover:border-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors"
               >
                 퀴즈 재생성
@@ -230,7 +231,7 @@ export default function QuizPage() {
               대시보드로 돌아가기
             </button>
             <div className="text-center">
-              <h1 className="text-[20px] font-[800] text-[#3B6B4A] mb-2">AI 맞춤 퀴즈</h1>
+              <h1 className="text-[20px] font-[800] text-[#3B6B4A] mb-2">{mode === "retry" ? "이전 퀴즈 다시풀기" : "AI 맞춤 퀴즈"}</h1>
               <p className="text-[13px] text-[#777777] font-[600]">
                 문제 {currentQuestionIndex + 1} / {questions.length}
               </p>

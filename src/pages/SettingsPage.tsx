@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { Bell, Palette, Save, UserRound } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
 import { deleteAccount, getNotificationSettings, getProfile, updateNotificationSettings, updateProfile, updateUserEmail, type NotificationSettings, type UserProfile } from "../api/client";
@@ -33,6 +34,7 @@ function formatDisplayToTime(display: string): string {
 type SettingsTab = "profile" | "notifications";
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { setUserProfile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -106,6 +108,7 @@ export default function SettingsPage() {
       setProfileIcon(nextProfile.profileIcon || "🦉");
       setProfileColor(nextProfile.profileColor || "#3B6B4A");
       alert("내 설정이 저장되었습니다!");
+      navigate("/mypage");
     } catch {
       setError("내 설정 저장에 실패했습니다.");
     } finally {
@@ -128,6 +131,7 @@ export default function SettingsPage() {
         completionAlert: completionCongratEnabled,
       });
       alert("알림 설정이 저장되었습니다!");
+      navigate("/mypage");
     } catch {
       setError("알림 설정 저장에 실패했습니다.");
     } finally {

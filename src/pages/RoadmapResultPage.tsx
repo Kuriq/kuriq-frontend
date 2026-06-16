@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Navigation } from "../components/layout/Navigation";
 import { OwlMascot } from "../components/common/OwlMascot";
-import { getRoadmap, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
+import { deleteRoadmap, getRoadmap, type Roadmap, type RoadmapWeek, type RoadmapItem } from "../api/client";
 import { getPlatformLabel } from "../utils/platform";
 
 export default function RoadmapResultPage() {
@@ -105,7 +105,14 @@ export default function RoadmapResultPage() {
             </button>
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={async () => {
+                try {
+                  await deleteRoadmap(roadmap.id);
+                } catch {
+                  // 이미 삭제되었거나 생성 직후 예외가 나더라도 홈 이동은 계속 진행
+                }
+                navigate("/");
+              }}
               className="px-8 py-3 bg-white border border-[#E5E0D8] text-[#2C2C2C] rounded-full font-[600] text-[15px] hover:border-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors"
             >
               다시 생성하기

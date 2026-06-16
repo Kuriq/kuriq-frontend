@@ -125,6 +125,8 @@ export default function NoteEditorPage() {
     showQuizResult,
     expandedQuestion,
     handleStartQuiz,
+    handleRetryQuiz,
+    handleRegenerateQuiz,
     handleSelectAnswer,
     handleNextQuestion,
     handleSubmitQuiz,
@@ -427,6 +429,8 @@ export default function NoteEditorPage() {
                     quizAnswers={quizAnswers}
                     quizResult={quizResult}
                     handleStartQuiz={handleStartQuiz}
+                    handleRetryQuiz={handleRetryQuiz}
+                    handleRegenerateQuiz={handleRegenerateQuiz}
                     handleSelectAnswer={handleSelectAnswer}
                     handleNextQuestion={handleNextQuestion}
                     handleSubmitQuiz={handleSubmitQuiz}
@@ -458,7 +462,11 @@ export default function NoteEditorPage() {
           onClose={() => setShowQuizResult(false)}
           onRetry={async () => {
             setShowQuizResult(false);
-            await handleStartQuiz();
+            await handleRetryQuiz();
+          }}
+          onRegenerate={async () => {
+            setShowQuizResult(false);
+            await handleRegenerateQuiz();
           }}
         />
       )}

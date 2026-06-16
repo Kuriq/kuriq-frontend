@@ -19,6 +19,7 @@ interface QuizResultModalProps {
   setExpandedQuestion: (num: number | null) => void;
   onClose: () => void;
   onRetry: () => void;
+  onRegenerate: () => void;
 }
 
 export function QuizResultModal({
@@ -27,6 +28,7 @@ export function QuizResultModal({
   setExpandedQuestion,
   onClose,
   onRetry,
+  onRegenerate,
 }: QuizResultModalProps) {
   return (
     <div
@@ -144,13 +146,20 @@ export function QuizResultModal({
         </div>
 
         {/* Bottom Action Buttons */}
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <button
             onClick={onRetry}
             className="flex-1 h-11 rounded-lg font-medium text-sm border-2 transition-colors"
             style={{ borderColor: "#3B6B4A", color: "#3B6B4A", backgroundColor: "transparent" }}
           >
-            다시 풀기
+            퀴즈 다시풀기
+          </button>
+          <button
+            onClick={onRegenerate}
+            className="flex-1 h-11 rounded-lg font-medium text-sm border-2 transition-colors"
+            style={{ borderColor: "#E5E0D8", color: "#2C2C2C", backgroundColor: "white" }}
+          >
+            퀴즈 재생성
           </button>
           <button
             onClick={onClose}

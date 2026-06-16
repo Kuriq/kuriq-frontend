@@ -8,6 +8,8 @@ interface QuizTabProps {
   quizAnswers: Record<number, string>;
   quizResult: { totalQuestions: number; correctCount: number; scorePercent: number } | null;
   handleStartQuiz: () => void;
+  handleRetryQuiz: () => void;
+  handleRegenerateQuiz: () => void;
   handleSelectAnswer: (optionId: string) => void;
   handleNextQuestion: () => void;
   handleSubmitQuiz: () => void;
@@ -21,6 +23,8 @@ export function QuizTab({
   quizAnswers,
   quizResult,
   handleStartQuiz,
+  handleRetryQuiz,
+  handleRegenerateQuiz,
   handleSelectAnswer,
   handleNextQuestion,
   handleSubmitQuiz,
@@ -59,17 +63,25 @@ export function QuizTab({
         </p>
         <div className="flex flex-col gap-2">
           <button
-            onClick={handleStartQuiz}
+            onClick={handleRetryQuiz}
             disabled={quizLoading}
             className="w-full h-11 rounded-lg font-medium text-sm disabled:opacity-60"
             style={{ backgroundColor: "#3B6B4A", color: "white" }}
           >
-            {quizLoading ? "🔄 AI가 새 퀴즈를 만들고 있어요..." : "🔄 다시 풀기"}
+            {quizLoading ? "퀴즈를 불러오는 중..." : "🔁 퀴즈 다시풀기"}
+          </button>
+          <button
+            onClick={handleRegenerateQuiz}
+            disabled={quizLoading}
+            className="w-full h-11 rounded-lg font-medium text-sm disabled:opacity-60"
+            style={{ backgroundColor: "white", color: "#3B6B4A", border: "1px solid #3B6B4A" }}
+          >
+            {quizLoading ? "🔄 AI가 새 퀴즈를 만들고 있어요..." : "✨ 퀴즈 재생성"}
           </button>
           <button
             onClick={handleSubmitQuiz}
             className="w-full h-11 rounded-lg font-medium text-sm"
-            style={{ backgroundColor: "white", color: "#3B6B4A", border: "1px solid #3B6B4A" }}
+            style={{ backgroundColor: "white", color: "#777777", border: "1px solid #E5E0D8" }}
           >
             결과 상세 보기
           </button>
