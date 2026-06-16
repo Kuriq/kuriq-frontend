@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
-import { searchCourses, getPopularCourses, logCourseClick, type CourseSearchResult } from "../api/client";
+import { searchCourses, logCourseClick, type CourseSearchResult } from "../api/client";
 import { getPlatformFilterValue, getPlatformLabel } from "../utils/platform";
 
 const sortMap: Record<string, string> = {
   "최신순": "latest",
+  "인기순": "popular",
   "강좌명순": "title",
 };
 
@@ -29,26 +30,18 @@ export default function SearchPage() {
     const requestId = ++latestRequestId.current;
     setLoading(true);
     try {
-      if (sortBy === "인기순") {
-        const popular = await getPopularCourses(30);
-        if (requestId !== latestRequestId.current) return;
-        setResults(popular);
-        setTotalElements(popular.length);
-        setPage(0);
-      } else {
-        const res = await searchCourses({
-          keyword: searchQuery || undefined,
-          platform: platform ? getPlatformFilterValue(platform) : undefined,
-          category: category || undefined,
-          sort: sortMap[sortBy] || "latest",
-          page: pageNum,
-          size,
-        });
-        if (requestId !== latestRequestId.current) return;
-        setResults(res.content);
-        setTotalElements(res.totalElements);
-        setPage(res.currentPage);
-      }
+      const res = await searchCourses({
+        keyword: searchQuery || undefined,
+        platform: platform ? getPlatformFilterValue(platform) : undefined,
+        category: category || undefined,
+        sort: sortMap[sortBy] || "latest",
+        page: pageNum,
+        size,
+      });
+      if (requestId !== latestRequestId.current) return;
+      setResults(res.content);
+      setTotalElements(res.totalElements);
+      setPage(res.currentPage);
     } catch (err) {
       if (requestId !== latestRequestId.current) return;
       console.error("강좌 검색 실패:", err);
@@ -77,6 +70,7 @@ export default function SearchPage() {
       hasHandledInitialFilterEffect.current = true;
       return;
     }
+
     setPage(0);
     void fetchCourses(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -149,11 +143,9 @@ export default function SearchPage() {
             <h2 className="text-[16px] text-[#2C2C2C] font-[600]">
               {loading
                 ? "검색 중..."
-                : sortBy === "인기순"
-                  ? `오늘의 인기 강좌 ${totalElements}개`
-                  : isShowingAllCourses
-                    ? `전체 ${totalElements}개의 강좌가 있어요`
-                    : `총 ${totalElements}개의 강좌를 찾았어요`}
+                : isShowingAllCourses
+                  ? `전체 ${totalElements}개의 강좌가 있어요`
+                  : `총 ${totalElements}개의 강좌를 찾았어요`}
             </h2>
             <SortMenu value={sortBy} onChange={setSortBy} />
           </div>
@@ -191,7 +183,7 @@ export default function SearchPage() {
             </div>
           )}
 
-          {totalElements > size && sortBy !== "인기순" && (
+          {totalElements > size && (
             <Pagination
               currentPage={page}
               totalPages={Math.ceil(totalElements / size)}
