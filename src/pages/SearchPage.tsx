@@ -1,15 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
-import { searchCourses, type CourseSearchResult } from "../api/client";
+import { searchCourses, getPopularCourses, logCourseClick, type CourseSearchResult } from "../api/client";
 import { getPlatformFilterValue, getPlatformLabel } from "../utils/platform";
 
-// 정렬 기능 제거 (ChromaDB 검색 시 정렬 파라미터 미전달로 인해 비활성화)
+const sortMap: Record<string, string> = {
+  "최신순": "latest",
+  "강좌명순": "title",
+};
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [platform, setPlatform] = useState("");
   const [category, setCategory] = useState("");
+  const [sortBy, setSortBy] = useState("최신순");
+
   const [results, setResults] = useState<CourseSearchResult["content"]>([]);
   const [loading, setLoading] = useState(false);
   const [totalElements, setTotalElements] = useState(0);
@@ -24,22 +29,28 @@ export default function SearchPage() {
     const requestId = ++latestRequestId.current;
     setLoading(true);
     try {
-      const res = await searchCourses({
-        keyword: searchQuery || undefined,
-        platform: platform ? getPlatformFilterValue(platform) : undefined,
-        category: category || undefined,
-        page: pageNum,
-        size,
-      });
-
-      if (requestId !== latestRequestId.current) return;
-
-      setResults(res.content);
-      setTotalElements(res.totalElements);
-      setPage(res.currentPage);
+      if (sortBy === "인기순") {
+        const popular = await getPopularCourses(30);
+        if (requestId !== latestRequestId.current) return;
+        setResults(popular);
+        setTotalElements(popular.length);
+        setPage(0);
+      } else {
+        const res = await searchCourses({
+          keyword: searchQuery || undefined,
+          platform: platform ? getPlatformFilterValue(platform) : undefined,
+          category: category || undefined,
+          sort: sortMap[sortBy] || "latest",
+          page: pageNum,
+          size,
+        });
+        if (requestId !== latestRequestId.current) return;
+        setResults(res.content);
+        setTotalElements(res.totalElements);
+        setPage(res.currentPage);
+      }
     } catch (err) {
       if (requestId !== latestRequestId.current) return;
-
       console.error("강좌 검색 실패:", err);
       setResults([]);
       setTotalElements(0);
@@ -48,7 +59,7 @@ export default function SearchPage() {
         setLoading(false);
       }
     }
-  }, [searchQuery, platform, category]);
+  }, [searchQuery, platform, category, sortBy]);
 
   const handleSearch = () => {
     setPage(0);
@@ -58,21 +69,19 @@ export default function SearchPage() {
   const handleResetFilters = () => {
     setPlatform("");
     setCategory("");
+    setSortBy("최신순");
   };
 
-  // 필터 변경 시 즉시 검색 실행
   useEffect(() => {
     if (!hasHandledInitialFilterEffect.current) {
       hasHandledInitialFilterEffect.current = true;
       return;
     }
-
     setPage(0);
     void fetchCourses(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, category]);
+  }, [platform, category, sortBy]);
 
-  // 초기 로딩 시 전체 강좌 조회
   useEffect(() => {
     void fetchCourses(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,10 +149,13 @@ export default function SearchPage() {
             <h2 className="text-[16px] text-[#2C2C2C] font-[600]">
               {loading
                 ? "검색 중..."
-                : isShowingAllCourses
-                  ? `전체 ${totalElements}개의 강좌가 있어요`
-                  : `총 ${totalElements}개의 강좌를 찾았어요`}
+                : sortBy === "인기순"
+                  ? `오늘의 인기 강좌 ${totalElements}개`
+                  : isShowingAllCourses
+                    ? `전체 ${totalElements}개의 강좌가 있어요`
+                    : `총 ${totalElements}개의 강좌를 찾았어요`}
             </h2>
+            <SortMenu value={sortBy} onChange={setSortBy} />
           </div>
 
           {loading ? (
@@ -168,14 +180,18 @@ export default function SearchPage() {
             <div className="space-y-4">
               {results.map((course) => (
                 <div key={course.id} className="card-enter">
-                  <SearchResultCard {...course} />
+                  <SearchResultCard
+                    {...course}
+                    onUrlClick={() => {
+                      logCourseClick(course.id, getPlatformFilterValue(course.platform)).catch(() => {});
+                    }}
+                  />
                 </div>
               ))}
             </div>
           )}
 
-          {/* Pagination */}
-          {totalElements > size && (
+          {totalElements > size && sortBy !== "인기순" && (
             <Pagination
               currentPage={page}
               totalPages={Math.ceil(totalElements / size)}
@@ -233,7 +249,6 @@ function FilterDropdownButton({
   const [isOpen, setIsOpen] = useState(false);
 
   const handleOptionClick = (option: string) => {
-    // 이미 선택된 옵션을 다시 클릭하면 해제 (토글)
     if (value === option) {
       onChange("");
     } else {
@@ -309,6 +324,53 @@ function ActiveFilterChip({
   );
 }
 
+function SortMenu({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const sortOptions = ["최신순", "인기순", "강좌명순"];
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="px-3 py-1.5 text-[14px] text-[#2C2C2C] font-[400] hover:text-[#3B6B4A] transition-colors flex items-center gap-1"
+      >
+        {value}
+        <ChevronDown className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full mt-1 right-0 bg-white border border-[#E5E0D8] rounded-xl shadow-lg py-2 min-w-[120px] z-20">
+            {sortOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  onChange(option);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-4 py-2 text-left text-[13px] hover:bg-[#F8F6F1] transition-colors ${
+                  value === option ? "text-[#3B6B4A] font-[600]" : "text-[#2C2C2C]"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function SearchResultCard({
   id,
   title,
@@ -316,6 +378,7 @@ function SearchResultCard({
   platform,
   category,
   url,
+  onUrlClick,
 }: {
   id: string;
   title: string;
@@ -323,6 +386,7 @@ function SearchResultCard({
   platform: string;
   category: string;
   url: string;
+  onUrlClick?: () => void;
 }) {
   const platformColors: Record<string, string> = {
     "K-MOOC": "bg-[#E8F0EA] text-[#3B6B4A]",
@@ -341,14 +405,13 @@ function SearchResultCard({
           <p className="text-[13px] text-[#777777] mb-3">{institution}</p>
           <div className="flex flex-wrap gap-2">
             <span
-              className={`px-3 py-1 rounded-full text-[11px] font-[600] max-w-[140px] truncate ${
+              className={`px-3 py-1 rounded-full text-[11px] font-[600] ${
                 platformColors[displayPlatform] || platformColors["K-MOOC"]
               }`}
-              title={displayPlatform}
             >
               {displayPlatform}
             </span>
-            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#F3E5F5] text-[#9C27B0] max-w-[120px] truncate" title={category}>
+            <span className="px-3 py-1 rounded-full text-[11px] font-[600] bg-[#F3E5F5] text-[#9C27B0]">
               {category}
             </span>
           </div>
@@ -357,6 +420,7 @@ function SearchResultCard({
           href={url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={onUrlClick}
           className="ml-4 px-5 py-2.5 border border-[#3B6B4A] text-[#3B6B4A] rounded-full text-[13px] font-[600] hover:bg-[#E8F0EA] transition-colors whitespace-nowrap"
         >
           수강 신청 →
