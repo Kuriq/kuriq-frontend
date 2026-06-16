@@ -368,8 +368,20 @@ function NotificationSection(props: {
       <div className="rounded-2xl border border-[#E5E0D8] bg-white p-8 shadow-sm mb-6">
         <h2 className="text-[18px] font-[800] text-[#2C2C2C] mb-6">알림 받을 곳</h2>
         <div className="space-y-4">
-          <ChannelRow icon={<Bell className="w-6 h-6 text-[#3C1E1E]" />} iconBgClassName="bg-[#FEE500]" title="카카오톡으로 받기" recommended enabled={kakaoEnabled} onChange={setKakaoEnabled} />
-          <ChannelRow icon={<Bell className="w-6 h-6 text-[#3B6B4A]" />} iconBgClassName="bg-[#E8F0EA]" title="이메일로 받기" enabled={emailEnabled} onChange={setEmailEnabled} />
+          {/* 카카오톡 알림 준비 중 안내 */}
+          <div className="flex items-center justify-between p-5 bg-[#F8F6F1] rounded-xl opacity-70">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FEE500]">
+                <Bell className="w-6 h-6 text-[#3C1E1E]" />
+              </div>
+              <div>
+                <span className="text-[15px] font-[600] text-[#2C2C2C]">카카오톡으로 받기</span>
+                <span className="ml-2 px-2.5 py-0.5 bg-[#E5E0D8] text-[#777777] text-[11px] font-[600] rounded-full">준비 중</span>
+                <p className="text-[12px] text-[#777777] mt-0.5">빠른 서비스 안내를 위해 이메일 알림을 권장해요.</p>
+              </div>
+            </div>
+          </div>
+          <ChannelRow icon={<Bell className="w-6 h-6 text-[#3B6B4A]" />} iconBgClassName="bg-[#E8F0EA]" title="이메일로 받기" recommended enabled={emailEnabled} onChange={setEmailEnabled} />
         </div>
       </div>
       <div className="rounded-2xl border border-[#E5E0D8] bg-white p-8 shadow-sm mb-6">
