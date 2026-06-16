@@ -429,6 +429,35 @@ function NotificationSection(props: {
                       type="email"
                       value={pendingEmail}
                       onChange={(e) => setPendingEmail(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !emailSaving) {
+                          e.preventDefault();
+                          // Trigger save logic
+                          const email = pendingEmail.trim();
+                          if (!email) {
+                            setEmailError("이메일을 입력해 주세요.");
+                            return;
+                          }
+                          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                          if (!emailRegex.test(email)) {
+                            setEmailError("올바른 이메일 형식이 아닙니다.");
+                            return;
+                          }
+                          setEmailSaving(true);
+                          setEmailError("");
+                          updateUserEmail(email)
+                            .then(async () => {
+                              const updatedProfile = await getProfile();
+                              setProfile(updatedProfile);
+                              setShowEmailInput(false);
+                              setPendingEmail("");
+                            })
+                            .catch((e: unknown) => {
+                              setEmailError(e instanceof Error ? e.message : "이메일 저장에 실패했습니다.");
+                            })
+                            .finally(() => setEmailSaving(false));
+                        }
+                      }}
                       placeholder="example@email.com"
                       className="flex-1 h-10 px-3 bg-white border border-[#E5E0D8] rounded-lg text-[14px] outline-none focus:border-[#3B6B4A]"
                     />
