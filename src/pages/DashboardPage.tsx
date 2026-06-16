@@ -25,12 +25,10 @@ export default function DashboardPage() {
       setError(null);
 
       try {
-        // 1. state로 전달받은 roadmapId 우선 사용
         const stateRoadmapId = (location.state as { roadmapId?: string } | null)?.roadmapId;
-        
+
         let roadmapId: string | undefined = stateRoadmapId;
 
-        // 2. 없으면 활성 로드맵 조회
         if (!roadmapId) {
           const myRoadmaps = await getMyRoadmaps(0, 10);
           const active = myRoadmaps.content.find((r) => r.isActive);
@@ -107,7 +105,6 @@ export default function DashboardPage() {
   const nextWeek = currentWeekIndex < roadmap.weeks.length - 1 ? roadmap.weeks[currentWeekIndex + 1] : null;
   const selectedWeekNumber = currentWeek?.weekNumber ?? roadmap.currentWeek;
 
-  // currentWeek 가 없으면 에러 처리
   if (!currentWeek) {
     return (
       <div className="min-h-screen bg-[#F8F6F1] flex flex-col">
@@ -130,14 +127,12 @@ export default function DashboardPage() {
   weekEndDay.setDate(weekEndDay.getDate() + 6);
   const formatDateShort = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
 
-  // 주차별 완료된 강좌 수 계산
   const totalCompletedItems = roadmap.weeks.reduce(
     (sum, w) => sum + w.items.filter((i) => i.isCompleted).length,
     0
   );
   const totalItems = roadmap.weeks.reduce((sum, w) => sum + w.items.length, 0);
 
-  // 강좌 완료 상태 토글 핸들러
   const handleToggleComplete = (itemId: string, willBeCompleted: boolean) => {
     let nextSelectedWeekIndex: number | null = null;
 
@@ -404,7 +399,7 @@ export default function DashboardPage() {
                         <p className="text-xs mb-3" style={{ color: '#3B6B4A' }}>
                           {rec.message}
                         </p>
-                        
+
                         {rec.url ? (
                           <a
                             href={rec.url}
@@ -535,6 +530,9 @@ function CourseCard({ item, onToggleComplete }: { item: RoadmapItem; onToggleCom
             {course.category}
           </span>
         </div>
+        {course.institution && (
+          <p className="text-xs" style={{ color: '#999999' }}>{course.institution}</p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

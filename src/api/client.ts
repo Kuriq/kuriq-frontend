@@ -838,7 +838,11 @@ export interface NextCourse {
   message: string;
 }
 
-export async function getRecommendations(roadmapId?: string) {
-  const query = roadmapId ? `?roadmapId=${encodeURIComponent(roadmapId)}` : "";
+// baseCourseId: 현재 보고 있는 주차의 첫 번째 강좌 ID (주차 변경 시 추천 기준 강좌도 변경됨)
+export async function getRecommendations(roadmapId?: string, baseCourseId?: string) {
+  const qs = new URLSearchParams();
+  if (roadmapId) qs.set("roadmapId", roadmapId);
+  if (baseCourseId) qs.set("baseCourseId", baseCourseId);
+  const query = qs.toString() ? `?${qs.toString()}` : "";
   return request<NextCourse[]>(`/api/v1/users/me/recommendations${query}`);
 }

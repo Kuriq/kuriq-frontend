@@ -137,7 +137,7 @@ export default function NoteEditorPage() {
   const handleTabChange = (nextTab: "organize" | "quiz" | "chat") => {
     if (isAiTaskRunning) return;
     setActiveTab(nextTab);
-    if (nextTab !== "organize") setShowOrganizeResult(false);
+    // AI 정리 결과를 다른 탭 갔다 와도 유지 (organize 탭 재진입 시 계속 표시)
   };
 
   return (

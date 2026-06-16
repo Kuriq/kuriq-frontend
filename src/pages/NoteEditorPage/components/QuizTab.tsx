@@ -60,10 +60,11 @@ export function QuizTab({
         <div className="flex flex-col gap-2">
           <button
             onClick={handleStartQuiz}
-            className="w-full h-11 rounded-lg font-medium text-sm"
+            disabled={quizLoading}
+            className="w-full h-11 rounded-lg font-medium text-sm disabled:opacity-60"
             style={{ backgroundColor: "#3B6B4A", color: "white" }}
           >
-            🔄 다시 풀기
+            {quizLoading ? "🔄 AI가 새 퀴즈를 만들고 있어요..." : "🔄 다시 풀기"}
           </button>
           <button
             onClick={handleSubmitQuiz}
