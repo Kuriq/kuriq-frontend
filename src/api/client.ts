@@ -866,11 +866,10 @@ export async function submitQuizRetry(quizSessionId: string, answers: QuizAnswer
 }
 
 // ── User Email Update ─────────────────────────────────
-// SettingsPage.tsx가 updateUserEmail을 import할 때 빌드 에러 방지용
 
-export async function updateUserEmail(email: string, currentPassword: string) {
-  return request<UserProfile>("/api/v1/users/me/email", {
-    method: "PUT",
-    body: JSON.stringify({ email, currentPassword }),
+export async function updateUserEmail(email: string) {
+  return request<void>("/api/v1/users/me/email", {
+    method: "PATCH",
+    body: JSON.stringify({ email }),
   });
 }
