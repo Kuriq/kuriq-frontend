@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, Palette, Save, UserRound } from "lucide-react";
 import { Navigation } from "../components/layout/Navigation";
-import { deleteAccount, getNotificationSettings, getProfile, updateNotificationSettings, updateProfile, type NotificationSettings, type UserProfile } from "../api/client";
+import { deleteAccount, getNotificationSettings, getProfile, updateNotificationSettings, updateProfile, updateUserEmail, type NotificationSettings, type UserProfile } from "../api/client";
 import { OwlMascot } from "../components/common/OwlMascot";
 import { useAuth } from "../context/AuthContext";
 
@@ -42,6 +42,10 @@ export default function SettingsPage() {
 
   const [kakaoEnabled, setKakaoEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const [selectedDay, setSelectedDay] = useState("월요일");
   const [selectedTime, setSelectedTime] = useState("오전 09:00");
   const [weeklyStartEnabled, setWeeklyStartEnabled] = useState(true);
@@ -271,12 +275,22 @@ export default function SettingsPage() {
               </div>
             </section>
           ) : (
-            <NotificationSection
-              kakaoEnabled={kakaoEnabled}
-              setKakaoEnabled={setKakaoEnabled}
-              emailEnabled={emailEnabled}
-              setEmailEnabled={setEmailEnabled}
-              selectedDay={selectedDay}
+          <NotificationSection
+            profile={profile}
+            setProfile={setProfile}
+            kakaoEnabled={kakaoEnabled}
+            setKakaoEnabled={setKakaoEnabled}
+            emailEnabled={emailEnabled}
+            setEmailEnabled={setEmailEnabled}
+            showEmailInput={showEmailInput}
+            setShowEmailInput={setShowEmailInput}
+            pendingEmail={pendingEmail}
+            setPendingEmail={setPendingEmail}
+            emailSaving={emailSaving}
+            setEmailSaving={setEmailSaving}
+            emailError={emailError}
+            setEmailError={setEmailError}
+            selectedDay={selectedDay}
               setSelectedDay={setSelectedDay}
               selectedTime={selectedTime}
               setSelectedTime={setSelectedTime}
@@ -352,8 +366,14 @@ export default function SettingsPage() {
 }
 
 function NotificationSection(props: {
+  profile: UserProfile | null;
+  setProfile: (p: UserProfile) => void;
   kakaoEnabled: boolean; setKakaoEnabled: (value: boolean) => void;
   emailEnabled: boolean; setEmailEnabled: (value: boolean) => void;
+  showEmailInput: boolean; setShowEmailInput: (value: boolean) => void;
+  pendingEmail: string; setPendingEmail: (value: string) => void;
+  emailSaving: boolean; setEmailSaving: (value: boolean) => void;
+  emailError: string; setEmailError: (value: string) => void;
   selectedDay: string; setSelectedDay: (value: string) => void;
   selectedTime: string; setSelectedTime: (value: string) => void;
   weeklyStartEnabled: boolean; setWeeklyStartEnabled: (value: boolean) => void;
@@ -362,27 +382,94 @@ function NotificationSection(props: {
   completionCongratEnabled: boolean; setCompletionCongratEnabled: (value: boolean) => void;
   days: string[]; times: string[]; saving: boolean; onSave: () => void;
 }) {
-  const { kakaoEnabled, setKakaoEnabled, emailEnabled, setEmailEnabled, selectedDay, setSelectedDay, selectedTime, setSelectedTime, weeklyStartEnabled, setWeeklyStartEnabled, incompleteReminderEnabled, setIncompleteReminderEnabled, inactiveNoticeEnabled, setInactiveNoticeEnabled, completionCongratEnabled, setCompletionCongratEnabled, days, times, saving, onSave } = props;
+  const { profile, setProfile, kakaoEnabled, setKakaoEnabled, emailEnabled, setEmailEnabled, showEmailInput, setShowEmailInput, pendingEmail, setPendingEmail, emailSaving, setEmailSaving, emailError, setEmailError, selectedDay, setSelectedDay, selectedTime, setSelectedTime, weeklyStartEnabled, setWeeklyStartEnabled, incompleteReminderEnabled, setIncompleteReminderEnabled, inactiveNoticeEnabled, setInactiveNoticeEnabled, completionCongratEnabled, setCompletionCongratEnabled, days, times, saving, onSave } = props;
   return (
     <section>
       <div className="rounded-2xl border border-[#E5E0D8] bg-white p-8 shadow-sm mb-6">
         <h2 className="text-[18px] font-[800] text-[#2C2C2C] mb-6">알림 받을 곳</h2>
-        <div className="space-y-4">
-          {/* 카카오톡 알림 준비 중 안내 */}
-          <div className="flex items-center justify-between p-5 bg-[#F8F6F1] rounded-xl opacity-70">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FEE500]">
-                <Bell className="w-6 h-6 text-[#3C1E1E]" />
-              </div>
-              <div>
-                <span className="text-[15px] font-[600] text-[#2C2C2C]">카카오톡으로 받기</span>
-                <span className="ml-2 px-2.5 py-0.5 bg-[#E5E0D8] text-[#777777] text-[11px] font-[600] rounded-full">준비 중</span>
-                <p className="text-[12px] text-[#777777] mt-0.5">빠른 서비스 안내를 위해 이메일 알림을 권장해요.</p>
+          <div className="space-y-4">
+            {/* 카카오톡 알림 준비 중 안내 */}
+            <div className="flex items-center justify-between p-5 bg-[#F8F6F1] rounded-xl opacity-70">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FEE500]">
+                  <Bell className="w-6 h-6 text-[#3C1E1E]" />
+                </div>
+                <div>
+                  <span className="text-[15px] font-[600] text-[#2C2C2C]">카카오톡으로 받기</span>
+                  <span className="ml-2 px-2.5 py-0.5 bg-[#E5E0D8] text-[#777777] text-[11px] font-[600] rounded-full">준비 중</span>
+                  <p className="text-[12px] text-[#777777] mt-0.5">빠른 서비스 안내를 위해 이메일 알림을 권장해요.</p>
+                </div>
               </div>
             </div>
+            <div className="p-5 bg-[#F8F6F1] rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#E8F0EA]">
+                    <Bell className="w-6 h-6 text-[#3B6B4A]" />
+                  </div>
+                  <div>
+                    <span className="text-[15px] font-[600] text-[#2C2C2C]">이메일로 받기</span>
+                    <span className="ml-2 px-2.5 py-0.5 bg-[#E8F0EA] text-[#3B6B4A] text-[11px] font-[600] rounded-full">추천</span>
+                    {profile?.email && <p className="text-[12px] text-[#777777] mt-0.5">{profile.email}</p>}
+                  </div>
+                </div>
+                <TogglePill enabled={emailEnabled} onChange={(val) => {
+                  setEmailEnabled(val);
+                  if (val && (!profile?.email || profile.email.trim() === "")) {
+                    setShowEmailInput(true);
+                    setEmailError("");
+                  }
+                }} />
+              </div>
+              {showEmailInput && (
+                <div className="mt-4 pt-4 border-t border-[#E5E0D8]">
+                  <p className="text-[13px] text-[#2C2C2C] font-[600] mb-2">이메일 주소를 입력해 주세요</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={pendingEmail}
+                      onChange={(e) => setPendingEmail(e.target.value)}
+                      placeholder="example@email.com"
+                      className="flex-1 h-10 px-3 bg-white border border-[#E5E0D8] rounded-lg text-[14px] outline-none focus:border-[#3B6B4A]"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!pendingEmail.trim()) {
+                          setEmailError("이메일을 입력해 주세요.");
+                          return;
+                        }
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(pendingEmail.trim())) {
+                          setEmailError("올바른 이메일 형식이 아닙니다.");
+                          return;
+                        }
+                        try {
+                          setEmailSaving(true);
+                          setEmailError("");
+                          await updateUserEmail(pendingEmail.trim());
+                          // 프로필 새로고침
+                          const updatedProfile = await getProfile();
+                          setProfile(updatedProfile);
+                          setShowEmailInput(false);
+                          setPendingEmail("");
+                        } catch (e: unknown) {
+                          setEmailError(e instanceof Error ? e.message : "이메일 저장에 실패했습니다.");
+                        } finally {
+                          setEmailSaving(false);
+                        }
+                      }}
+                      disabled={emailSaving}
+                      className="px-4 h-10 bg-[#3B6B4A] text-white rounded-lg text-[14px] font-[600] hover:bg-[#2d5438] disabled:opacity-50"
+                    >
+                      {emailSaving ? "저장 중..." : "저장"}
+                    </button>
+                  </div>
+                  {emailError && <p className="text-[12px] text-red-600 mt-1.5">{emailError}</p>}
+                </div>
+              )}
+            </div>
           </div>
-          <ChannelRow icon={<Bell className="w-6 h-6 text-[#3B6B4A]" />} iconBgClassName="bg-[#E8F0EA]" title="이메일로 받기" recommended enabled={emailEnabled} onChange={setEmailEnabled} />
-        </div>
       </div>
       <div className="rounded-2xl border border-[#E5E0D8] bg-white p-8 shadow-sm mb-6">
         <h2 className="text-[18px] font-[800] text-[#2C2C2C] mb-3">나의 학습 시작 시간</h2>

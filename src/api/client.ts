@@ -382,6 +382,13 @@ export async function updateProfile(data: { name: string; profileIcon: string; p
   });
 }
 
+export async function updateUserEmail(email: string) {
+  return request<void>("/api/v1/users/me/email", {
+    method: "PATCH",
+    body: JSON.stringify({ email }),
+  });
+}
+
 export async function deleteAccount(password?: string) {
   if (password) {
     return request<void>(`/api/v1/users/me?password=${encodeURIComponent(password)}`, { method: "DELETE" });
@@ -651,6 +658,17 @@ export interface QuizSubmitResponse {
 
 export async function submitQuiz(quizSessionId: string, answers: QuizAnswer[]) {
   return request<QuizSubmitResponse>(`/api/v1/quiz/${quizSessionId}/submit`, {
+    method: "POST",
+    body: JSON.stringify({ answers }),
+  });
+}
+
+export async function retryQuiz(quizSessionId: string) {
+  return request<QuizGenerateResponse>(`/api/v1/quiz/${quizSessionId}/retry`);
+}
+
+export async function submitQuizRetry(quizSessionId: string, answers: QuizAnswer[]) {
+  return request<QuizSubmitResponse>(`/api/v1/quiz/${quizSessionId}/submit-retry`, {
     method: "POST",
     body: JSON.stringify({ answers }),
   });

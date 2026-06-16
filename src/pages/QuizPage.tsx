@@ -2,14 +2,17 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ArrowRight, Check, ChevronLeft } from "lucide-react";
 import { OwlMascot } from "../components/common/OwlMascot";
-import { generateQuiz, submitQuiz, type QuizQuestion, type QuizResult } from "../api/client";
+import { generateQuiz, submitQuiz, retryQuiz, submitQuizRetry, type QuizQuestion, type QuizResult } from "../api/client";
 
 type QuizPhase = "loading" | "answering" | "feedback" | "result";
+type QuizMode = "new" | "retry";
 
 export default function QuizPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const noteId = searchParams.get("noteId") || "";
+  const mode = (searchParams.get("mode") as QuizMode) || "new";
+  const retrySessionId = searchParams.get("sessionId") || "";
 
   const [phase, setPhase] = useState<QuizPhase>("loading");
   const [quizSessionId, setQuizSessionId] = useState<string>("");
@@ -22,8 +25,27 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Generate quiz on mount
+  // Generate quiz on mount (or retry existing session)
   useEffect(() => {
+    if (mode === "retry") {
+      if (!retrySessionId) {
+        setError("퀴즈 세션 ID가 없습니다.");
+        setPhase("result");
+        return;
+      }
+      setLoading(true);
+      retryQuiz(retrySessionId)
+        .then((res) => {
+          setQuizSessionId(res.quizSessionId);
+          setQuestions(res.questions);
+          setPhase("answering");
+        })
+        .catch(() => setError("퀴즈 다시풀기에 실패했습니다."))
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    // New quiz mode
     if (!noteId) {
       setError("노트 ID가 없습니다.");
       setPhase("result");
@@ -38,7 +60,7 @@ export default function QuizPage() {
       })
       .catch(() => setError("퀴즈 생성에 실패했습니다."))
       .finally(() => setLoading(false));
-  }, [noteId]);
+  }, [noteId, mode, retrySessionId]);
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
@@ -78,7 +100,9 @@ export default function QuizPage() {
         // This is simplified — in production you'd track all answers
         return { questionId: q.questionId, answer: selectedOption || shortAnswer || "" };
       });
-      const res = await submitQuiz(quizSessionId, answers);
+      const res = mode === "retry"
+        ? await submitQuizRetry(quizSessionId, answers)
+        : await submitQuiz(quizSessionId, answers);
       setResults(res.results);
       setPhase("result");
     } catch {
@@ -104,7 +128,9 @@ export default function QuizPage() {
       <div className="min-h-screen bg-[#F8F6F1] flex items-center justify-center">
         <div className="text-center">
           <OwlMascot size={80} variant="normal" />
-          <p className="mt-4 text-[16px] text-[#777777]">AI가 퀴즈를 만들고 있어요...</p>
+          <p className="mt-4 text-[16px] text-[#777777]">
+            {mode === "retry" ? "퀴즈를 불러오고 있어요..." : "AI가 퀴즈를 만들고 있어요..."}
+          </p>
         </div>
       </div>
     );
@@ -162,12 +188,26 @@ export default function QuizPage() {
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="mt-8 w-full py-4 bg-[#3B6B4A] text-white rounded-2xl text-[16px] font-[800] hover:bg-[#2d5438] transition-colors"
-            >
-              대시보드로 돌아가기
-            </button>
+            <div className="space-y-3 mt-8">
+              <button
+                onClick={() => navigate(`/quiz?mode=retry&sessionId=${quizSessionId}&noteId=${noteId}`)}
+                className="w-full py-4 bg-[#3B6B4A] text-white rounded-2xl text-[16px] font-[800] hover:bg-[#2d5438] transition-colors"
+              >
+                퀴즈 다시풀기
+              </button>
+              <button
+                onClick={() => navigate(`/quiz?noteId=${noteId}`)}
+                className="w-full py-4 bg-white border border-[#E5E0D8] text-[#2C2C2C] rounded-2xl text-[16px] font-[800] hover:border-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors"
+              >
+                퀴즈 재생성
+              </button>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="w-full py-4 bg-white border border-[#E5E0D8] text-[#777777] rounded-2xl text-[14px] font-[600] hover:text-[#2C2C2C] transition-colors"
+              >
+                대시보드로 돌아가기
+              </button>
+            </div>
           </div>
         </main>
       </div>
