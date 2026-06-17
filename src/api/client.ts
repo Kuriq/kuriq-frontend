@@ -854,14 +854,17 @@ export async function getRecommendations(roadmapId?: string) {
   return request<NextCourse[]>(`/api/v1/users/me/recommendations${query}`);
 }
 
-// ── Quiz (aliases for retry flow) ─────────────────────
+// ── Quiz Retry ────────────────────────────────────────
 
-export async function retryQuiz(noteId: string, excludeSessionIds?: string[]) {
-  return generateQuiz(noteId, excludeSessionIds);
+export async function retryQuiz(quizSessionId: string) {
+  return request<QuizGenerateResponse>(`/api/v1/quiz/${quizSessionId}/retry`);
 }
 
 export async function submitQuizRetry(quizSessionId: string, answers: QuizAnswer[]) {
-  return submitQuiz(quizSessionId, answers);
+  return request<QuizSubmitResponse>(`/api/v1/quiz/${quizSessionId}/submit-retry`, {
+    method: "POST",
+    body: JSON.stringify({ answers }),
+  });
 }
 
 // ── User Email Update ─────────────────────────────────
