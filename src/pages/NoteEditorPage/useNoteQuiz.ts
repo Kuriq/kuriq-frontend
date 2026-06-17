@@ -53,6 +53,7 @@ export function useNoteQuiz(courseId: string): UseNoteQuizReturn {
     setQuizAnswers({});
     setQuizResult(null);
     setShowQuizResult(false);
+    setExpandedQuestion(null);
   }, []);
 
   // Get noteId from courseId
@@ -66,12 +67,12 @@ export function useNoteQuiz(courseId: string): UseNoteQuizReturn {
   const handleStartQuiz = useCallback(async () => {
     if (!noteId) return;
     setQuizLoading(true);
+    resetQuizState();
     try {
       const res = await generateQuiz(noteId);
       setQuizSessionId(res.quizSessionId);
       setQuizQuestions(res.questions);
       setIsRetryMode(false);
-      resetQuizState();
     } catch {
       alert("퀴즈 생성에 실패했습니다.");
     } finally {
@@ -82,12 +83,12 @@ export function useNoteQuiz(courseId: string): UseNoteQuizReturn {
   const handleRetryQuiz = useCallback(async () => {
     if (!quizSessionId) return;
     setQuizLoading(true);
+    resetQuizState();
     try {
       const res = await retryQuiz(quizSessionId);
       setQuizSessionId(res.quizSessionId);
       setQuizQuestions(res.questions);
       setIsRetryMode(true);
-      resetQuizState();
     } catch {
       alert("퀴즈 다시풀기에 실패했습니다.");
     } finally {
@@ -98,13 +99,13 @@ export function useNoteQuiz(courseId: string): UseNoteQuizReturn {
   const handleRegenerateQuiz = useCallback(async () => {
     if (!noteId) return;
     setQuizLoading(true);
+    resetQuizState();
     try {
       const excludeSessionIds = quizSessionId ? [quizSessionId] : undefined;
       const res = await generateQuiz(noteId, excludeSessionIds);
       setQuizSessionId(res.quizSessionId);
       setQuizQuestions(res.questions);
       setIsRetryMode(false);
-      resetQuizState();
     } catch {
       alert("퀴즈 재생성에 실패했습니다.");
     } finally {

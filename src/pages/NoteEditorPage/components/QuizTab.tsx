@@ -29,6 +29,17 @@ export function QuizTab({
   handleNextQuestion,
   handleSubmitQuiz,
 }: QuizTabProps) {
+  if (quizLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+        <div className="h-9 w-9 rounded-full border-4 border-[#E5E0D8] border-t-[#3B6B4A] animate-spin" />
+        <p className="text-sm font-medium" style={{ color: "#3B6B4A" }}>
+          퀴즈를 준비하고 있어요...
+        </p>
+      </div>
+    );
+  }
+
   if (!quizStarted) {
     return (
       <div className="flex flex-col gap-4">
@@ -41,6 +52,7 @@ export function QuizTab({
           </span>
         </div>
         <button
+          type="button"
           onClick={handleStartQuiz}
           disabled={quizLoading}
           className="w-full h-11 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-40"
@@ -63,7 +75,10 @@ export function QuizTab({
         </p>
         <div className="flex flex-col gap-2">
           <button
-            onClick={handleRetryQuiz}
+            type="button"
+            onClick={() => {
+              void handleRetryQuiz();
+            }}
             disabled={quizLoading}
             className="w-full h-11 rounded-lg font-medium text-sm disabled:opacity-60"
             style={{ backgroundColor: "#3B6B4A", color: "white" }}
@@ -71,7 +86,10 @@ export function QuizTab({
             {quizLoading ? "퀴즈를 불러오는 중..." : "🔁 퀴즈 다시풀기"}
           </button>
           <button
-            onClick={handleRegenerateQuiz}
+            type="button"
+            onClick={() => {
+              void handleRegenerateQuiz();
+            }}
             disabled={quizLoading}
             className="w-full h-11 rounded-lg font-medium text-sm disabled:opacity-60"
             style={{ backgroundColor: "white", color: "#3B6B4A", border: "1px solid #3B6B4A" }}
@@ -79,6 +97,7 @@ export function QuizTab({
             {quizLoading ? "🔄 AI가 새 퀴즈를 만들고 있어요..." : "✨ 퀴즈 재생성"}
           </button>
           <button
+            type="button"
             onClick={handleSubmitQuiz}
             className="w-full h-11 rounded-lg font-medium text-sm"
             style={{ backgroundColor: "white", color: "#777777", border: "1px solid #E5E0D8" }}
@@ -144,6 +163,7 @@ export function QuizTab({
               const isSelected = quizAnswers[currentQuestion] === option.id;
               return (
                 <button
+                  type="button"
                   key={option.id}
                   onClick={() => handleSelectAnswer(option.id)}
                   className="w-full min-h-[48px] px-4 py-3 rounded-lg text-left text-sm transition-all flex items-center justify-between gap-2"
@@ -170,6 +190,7 @@ export function QuizTab({
         {question.type === "TRUE_FALSE" && (
           <div className="flex flex-col gap-2">
             <button
+              type="button"
               onClick={() => handleSelectAnswer("true")}
               className="w-full min-h-[48px] px-4 py-3 rounded-lg text-left text-sm transition-all flex items-center justify-between gap-2"
               style={{
@@ -188,6 +209,7 @@ export function QuizTab({
               )}
             </button>
             <button
+              type="button"
               onClick={() => handleSelectAnswer("false")}
               className="w-full min-h-[48px] px-4 py-3 rounded-lg text-left text-sm transition-all flex items-center justify-between gap-2"
               style={{
@@ -230,6 +252,7 @@ export function QuizTab({
 
       {/* Next / Submit Button */}
       <button
+        type="button"
         onClick={() => {
           if (currentQuestion < quizQuestions.length - 1) {
             handleNextQuestion();
