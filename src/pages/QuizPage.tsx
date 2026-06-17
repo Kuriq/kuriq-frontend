@@ -21,10 +21,53 @@ export default function QuizPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [shortAnswer, setShortAnswer] = useState("");
+  const [answersByQuestion, setAnswersByQuestion] = useState<Record<string, string | boolean>>({});
   const [showFeedback, setShowFeedback] = useState(false);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resetAnswerState = () => {
+    setCurrentQuestionIndex(0);
+    setSelectedOption(null);
+    setShortAnswer("");
+    setAnswersByQuestion({});
+    setShowFeedback(false);
+    setResults([]);
+    setError(null);
+  };
+
+  const loadRetryQuiz = async (sessionId: string) => {
+    setLoading(true);
+    resetAnswerState();
+    try {
+      const res = await retryQuiz(sessionId);
+      setQuizSessionId(res.quizSessionId);
+      setQuestions(res.questions);
+      setPhase("answering");
+    } catch {
+      setError("퀴즈 다시풀기에 실패했습니다.");
+      setPhase("result");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadGeneratedQuiz = async (targetNoteId: string, targetExcludeSessionId?: string) => {
+    setLoading(true);
+    resetAnswerState();
+    try {
+      const res = await generateQuiz(targetNoteId, targetExcludeSessionId ? [targetExcludeSessionId] : undefined);
+      setQuizSessionId(res.quizSessionId);
+      setQuestions(res.questions);
+      setPhase("answering");
+    } catch {
+      setError("퀴즈 생성에 실패했습니다.");
+      setPhase("result");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Generate quiz on mount (or retry existing session)
   useEffect(() => {
@@ -34,15 +77,7 @@ export default function QuizPage() {
         setPhase("result");
         return;
       }
-      setLoading(true);
-      retryQuiz(retrySessionId)
-        .then((res) => {
-          setQuizSessionId(res.quizSessionId);
-          setQuestions(res.questions);
-          setPhase("answering");
-        })
-        .catch(() => setError("퀴즈 다시풀기에 실패했습니다."))
-        .finally(() => setLoading(false));
+      void loadRetryQuiz(retrySessionId);
       return;
     }
 
@@ -52,15 +87,7 @@ export default function QuizPage() {
       setPhase("result");
       return;
     }
-    setLoading(true);
-    generateQuiz(noteId, excludeSessionId ? [excludeSessionId] : undefined)
-      .then((res) => {
-        setQuizSessionId(res.quizSessionId);
-        setQuestions(res.questions);
-        setPhase("answering");
-      })
-      .catch(() => setError("퀴즈 생성에 실패했습니다."))
-      .finally(() => setLoading(false));
+    void loadGeneratedQuiz(noteId, excludeSessionId);
   }, [noteId, mode, retrySessionId, excludeSessionId]);
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -69,6 +96,16 @@ export default function QuizPage() {
   const handleOptionSelect = (optionId: string) => {
     if (showFeedback) return;
     setSelectedOption(optionId);
+    if (currentQuestion) {
+      setAnswersByQuestion((prev) => ({ ...prev, [currentQuestion.questionId]: optionId }));
+    }
+  };
+
+  const handleShortAnswerChange = (answer: string) => {
+    setShortAnswer(answer);
+    if (currentQuestion) {
+      setAnswersByQuestion((prev) => ({ ...prev, [currentQuestion.questionId]: answer }));
+    }
   };
 
   const handleSubmitAnswer = async () => {
@@ -97,10 +134,7 @@ export default function QuizPage() {
     setLoading(true);
     try {
       // Build answers from state
-      const answers = questions.map((q, i) => {
-        // This is simplified — in production you'd track all answers
-        return { questionId: q.questionId, answer: selectedOption || shortAnswer || "" };
-      });
+      const answers = questions.map((q) => ({ questionId: q.questionId, answer: answersByQuestion[q.questionId] || "" }));
       const res = mode === "retry"
         ? await submitQuizRetry(quizSessionId, answers)
         : await submitQuiz(quizSessionId, answers);
@@ -122,6 +156,19 @@ export default function QuizPage() {
     } else {
       submitAllAnswers();
     }
+  };
+
+  const handleRetryFromResult = () => {
+    if (!quizSessionId) return;
+    void loadRetryQuiz(quizSessionId);
+  };
+
+  const handleRegenerateFromResult = () => {
+    if (!noteId) {
+      setError("노트 ID가 없어 퀴즈를 재생성할 수 없습니다.");
+      return;
+    }
+    void loadGeneratedQuiz(noteId, quizSessionId);
   };
 
   if (loading && phase === "loading") {
@@ -191,13 +238,17 @@ export default function QuizPage() {
             </div>
             <div className="space-y-3 mt-8">
               <button
-                onClick={() => navigate(`/quiz?mode=retry&sessionId=${quizSessionId}&noteId=${noteId}`)}
+                type="button"
+                onClick={handleRetryFromResult}
+                disabled={loading || !quizSessionId}
                 className="w-full py-4 bg-[#3B6B4A] text-white rounded-2xl text-[16px] font-[800] hover:bg-[#2d5438] transition-colors"
               >
                 퀴즈 다시풀기
               </button>
               <button
-                onClick={() => navigate(`/quiz?noteId=${noteId}&excludeSessionId=${quizSessionId}`)}
+                type="button"
+                onClick={handleRegenerateFromResult}
+                disabled={loading || !noteId}
                 className="w-full py-4 bg-white border border-[#E5E0D8] text-[#2C2C2C] rounded-2xl text-[16px] font-[800] hover:border-[#3B6B4A] hover:bg-[#E8F0EA] transition-colors"
               >
                 퀴즈 재생성
@@ -292,7 +343,7 @@ export default function QuizPage() {
             <div className="mb-10">
               <textarea
                 value={shortAnswer}
-                onChange={(e) => setShortAnswer(e.target.value)}
+                onChange={(e) => handleShortAnswerChange(e.target.value)}
                 placeholder="답안을 입력하세요"
                 className="w-full h-[120px] p-4 bg-white border border-[#E5E0D8] rounded-2xl text-[16px] outline-none focus:border-[#3B6B4A] resize-none"
               />
